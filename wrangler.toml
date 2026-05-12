@@ -4,4 +4,4 @@ compatibility_date = "2024-01-01"
 [[d1_databases]]
 binding = "DB"
 database_name = "slot-portal-db"
-database_id = "YOUR_DATABASE_ID_HERE"
+database_id = "377fb647-0bc7-4c14-a51b-ef5369b26e20"
