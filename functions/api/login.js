@@ -40,7 +40,7 @@ export async function onRequestPost({ request, env }) {
     return new Response(JSON.stringify({ ok: true, username }), { status: 200, headers });
 
   } catch (e) {
-    return json({ error: 'Bad request' }, 400);
+    return json({ error: 'Bad request', detail: e?.message ?? String(e) }, 400);
   }
 }
 
