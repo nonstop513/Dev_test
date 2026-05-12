@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sugar Bang Bang - Demo Game</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <h1>🍬 Sugar Bang Bang 🍬</h1>
+            <div class="info-bar">
+                <div class="info-item">
+                    <span class="label">總分:</span>
+                    <span class="value" id="totalScore">0</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">本局:</span>
+                    <span class="value" id="currentWin">0</span>
+                </div>                <div class="info-item" id="freeGameWinItem" style="display:none;">
+                    <span class="label">本局FreeGame:</span>
+                    <span class="value" id="freeGameWin">0</span>
+                </div>                <div class="info-item">
+                    <span class="label">連鎖:</span>
+                    <span class="value" id="cascadeCount">0</span>
+                </div>
+            </div>
+            <div class="multiplier-bar">
+                <div class="multiplier-light" data-multiplier="1">
+                    <div class="light-bulb">
+                        <span class="light-label">×1</span>
+                    </div>
+                </div>
+                <div class="multiplier-light" data-multiplier="2">
+                    <div class="light-bulb">
+                        <span class="light-label">×2</span>
+                    </div>
+                </div>
+                <div class="multiplier-light" data-multiplier="3">
+                    <div class="light-bulb">
+                        <span class="light-label">×3</span>
+                    </div>
+                </div>
+                <div class="multiplier-light" data-multiplier="5">
+                    <div class="light-bulb">
+                        <span class="light-label">×5</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="game-board-container">
+            <div class="game-board" id="gameBoard">
+                <!-- 4 rows x 5 cols will be generated -->
+            </div>
+            
+            <div class="explosion-overlay" id="explosionOverlay"></div>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-spin" id="spinBtn">
+                <span class="btn-text">旋轉</span>
+            </button>
+            <button class="btn btn-freegame" id="freeGameBtn">
+                <span class="btn-text">FreeGame (測試)</span>
+            </button>
+        </div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <span class="stat-label">已玩局數:</span>
+                <span class="stat-value" id="totalSpins">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">RTP:</span>
+                <span class="stat-value" id="rtp">0.00%</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">最高得分:</span>
+                <span class="stat-value" id="maxWin">0</span>
+            </div>
+        </div>
+
+        <div class="cascade-details-container">
+            <h3>本局連鎖得分詳情</h3>
+            <div class="cascade-details" id="cascadeDetails">
+                <div class="no-wins">無得分</div>
+            </div>
+        </div>
+
+        <div class="log-container">
+            <h3>遊戲紀錄</h3>
+            <div class="log" id="gameLog"></div>
+        </div>
+    </div>
+
+    <script src="data.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>

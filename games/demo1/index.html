@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>瘋狂果醬罐 - Slot Demo</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="game-container">
+        <h1>瘋狂果醬罐</h1>
+
+        <div class="main-layout">
+            <!-- 左側：遊戲畫面 -->
+            <div class="game-board-section">
+                <div class="info-panel">
+                    <div class="info-item">
+                        <span>金額:</span>
+                        <span id="balance">100000</span>
+                    </div>
+                    <div class="info-item">
+                        <span>本次得分:</span>
+                        <span id="score">0</span>
+                    </div>
+                    <div class="info-item">
+                        <span>Wild倍數:</span>
+                        <span id="wild-mult">1x</span>
+                    </div>
+                    <div class="info-item">
+                        <span>Mega等級:</span>
+                        <span id="mega-level">0</span>
+                    </div>
+                    <div class="info-item">
+                        <span>Mega計數:</span>
+                        <span id="mega-count">0</span>
+                    </div>
+                    <div class="info-item freegame-info" id="freeGameInfo" style="display: none;">
+                        <span>🎰 FreeGame:</span>
+                        <span id="freegame-spins">0/10</span>
+                    </div>
+                </div>
+
+                <div class="board-container" id="boardContainer">
+                    <!-- 六角網格布局 [4, 5, 6, 7, 6, 5, 4] -->
+                    <div id="hexGrid" class="hex-grid"></div>
+                </div>
+            </div>
+
+            <!-- 右側：控制面板 -->
+            <div class="control-panel">
+                <button id="spinBtn" class="btn-spin">旋轉 SPIN (-100)</button>
+                <button id="autoSpinBtn" class="btn-auto-spin">自動旋轉</button>
+                <button id="stopAutoBtn" class="btn-stop-auto" style="display: none;">停止自動</button>
+                <button id="buyFeatureBtn" class="btn-buy-feature">Buy Feature (-10000)</button>
+                <button id="speedToggleBtn" class="btn-speed-toggle">动画速度: 1x</button>
+                <button id="weightChartBtn" class="btn-weight-chart">倍率權重調整</button>
+
+                <!-- 統計信息 -->
+                <div class="stats-panel">
+                    <div class="stat-item">
+                        <span class="stat-label">RTP:</span>
+                        <span id="rtp-value" class="stat-value">0.00%</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Spin數:</span>
+                        <span id="spin-count" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Hits:</span>
+                        <span id="hits-value" class="stat-value">0 (0.0%)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 倍率權重調整彈窗 -->
+    <div id="weightModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>倍率權重分析</h2>
+                <span class="modal-close" id="closeModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="edit-instructions">
+                    <div class="edit-controls">
+                        <button id="editModeBtn" class="btn-mode drag-mode">拖拉模式</button>
+                        <span id="editModeText">上下拖拉數據點調整</span>
+                        <label>Y軸上限:</label>
+                        <input type="number" id="yAxisMaxInput" placeholder="自動" min="0.1" step="1" value="50">
+                        <span>%</span>
+                    </div>
+                    <p>點擊圖例可切換顯示/隱藏各條線</p>
+                </div>
+
+                <div class="chart-container">
+                    <h3 id="baseGameTitle">BaseGame 倍率權重 <span class="stats-inline">平均倍數: -x | RTP: -%</span></h3>
+                    <canvas id="baseGameChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3 id="freeGameTitle">FreeGame 倍率權重 <span class="stats-inline">平均倍數: -x | RTP: -%</span></h3>
+                    <canvas id="freeGameChart"></canvas>
+                </div>
+
+                <div class="cycle-info">
+                    <h3>FreeGame 週期設定</h3>
+                    <div class="cycle-adjust">
+                        <label>當前週期:</label>
+                        <input type="number" id="targetCycleInput" min="1" step="1" value="200">
+                        <span>次 Spin</span>
+                        <button id="resetRedrawBtn" class="btn-reset">重置全部</button>
+                    </div>
+                    <div class="rtp-summary">
+                        <p>原始觸發機率: <span id="originalTriggerProb">-</span></p>
+                        <p>當前觸發機率: <span id="adjustedTriggerProb">-</span></p>
+                        <p class="total-rtp">總 RTP: <span id="totalRTP">-</span></p>
+                    </div>
+                    <p class="note">※ 修改週期即時生效，調整其他權重時週期固定不變</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="data.js"></script>
+    <script src="engine.js"></script>
+    <script src="game.js"></script>
+    <script src="weight-chart.js"></script>
+</body>
+</html>

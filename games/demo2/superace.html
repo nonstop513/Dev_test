@@ -1,0 +1,3946 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Way Game Slot Machine</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #fff;
+        }
+
+        .game-container {
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            max-width: 900px;
+            width: 100%;
+        }
+
+        .game-title {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            color: #ffd700;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .multiplier-display {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .multiplier-item {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #666;
+            border-radius: 8px;
+            color: #ccc;
+            font-size: 1.1em;
+            font-weight: bold;
+            min-width: 50px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .multiplier-item.active {
+            background: linear-gradient(45deg, #ffd700, #f39c12);
+            border-color: #ffd700;
+            color: #000;
+            transform: scale(1.1);
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            font-size: 1.2em;
+        }
+
+        .info-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 20px;
+            border-radius: 10px;
+            min-width: 120px;
+        }
+
+        .slot-machine {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+        }
+
+        .reel {
+            width: 120px;
+            height: 480px;
+            background: #000;
+            border: 3px solid #ffd700;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .reel-symbols {
+            position: absolute;
+            width: 100%;
+            top: 0;
+            left: 0;
+        }
+
+        .symbol {
+            width: 100%;
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            font-weight: bold;
+            border-bottom: 1px solid #333;
+            background: linear-gradient(45deg, #1a1a1a, #2a2a2a);
+            overflow: hidden;
+            position: absolute;
+            opacity: 1;
+            transform: translateY(0);
+            transition: all 0.5s ease-out;
+        }
+
+        .symbol.hidden {
+            opacity: 0;
+            transform: translateY(-50px);
+        }
+
+        .symbol img {
+            width: 80%;
+            height: 80%;
+            object-fit: contain;
+        }
+
+        .symbol.M1_G, .symbol.M2_G, .symbol.M3_G, .symbol.M4_G,
+        .symbol.A_G, .symbol.K_G, .symbol.Q_G, .symbol.J_G { 
+            background: linear-gradient(45deg, #ffd700, #f39c12);
+        }
+
+        .symbol.WILD { 
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+        }
+
+        .symbol.WILD2 { 
+            background: linear-gradient(45deg, #9b59b6, #8e44ad);
+            border: 2px solid #f39c12;
+        }
+
+        @keyframes goldenGlow {
+            from { 
+                box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+                transform: scale(1);
+            }
+            to { 
+                box-shadow: 0 0 20px rgba(255, 215, 0, 0.8), 0 0 30px rgba(255, 215, 0, 0.3);
+                transform: scale(1.02);
+            }
+        }
+
+        @keyframes wildGlow {
+            from { 
+                box-shadow: 0 0 10px rgba(231, 76, 60, 0.5);
+                transform: scale(1);
+            }
+            to { 
+                box-shadow: 0 0 20px rgba(231, 76, 60, 0.8), 0 0 30px rgba(231, 76, 60, 0.3);
+                transform: scale(1.02);
+            }
+        }
+
+        @keyframes glow {
+            from { box-shadow: 0 0 5px #ffd700; }
+            to { box-shadow: 0 0 20px #ffd700, 0 0 30px #ffd700; }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .mode-selector {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+        }
+
+        .mode-select {
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            border: 1px solid #ffd700;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .game-state-info {
+            display: flex;
+            gap: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            font-size: 14px;
+        }
+
+        .current-mode, .game-phase, .c1-counter {
+            color: #ffd700;
+        }
+
+        .control-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        .btn-spin {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            color: white;
+        }
+
+        .btn-spin:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
+        }
+
+        .btn-spin:disabled {
+            background: #7f8c8d;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .bet-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-bet {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
+            padding: 10px 15px;
+            min-width: 40px;
+        }
+
+        .btn-bet:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(52, 152, 219, 0.4);
+        }
+
+        .btn-auto {
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+            color: white;
+            padding: 15px 30px;
+            font-size: 1.1em;
+        }
+
+        .btn-auto:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(46, 204, 113, 0.4);
+        }
+
+        .btn-auto.active {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            animation: pulse 1s ease-in-out infinite alternate;
+        }
+
+        .btn-auto:disabled {
+            background: #7f8c8d;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-buy-feature {
+            background: linear-gradient(45deg, #9b59b6, #8e44ad);
+            color: white;
+        }
+
+        .btn-buy-feature:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(155, 89, 182, 0.4);
+        }
+
+        .btn-buy-feature:disabled {
+            background: #7f8c8d;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-add-money {
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+            color: white;
+            font-weight: bold;
+        }
+
+        .btn-add-money:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(46, 204, 113, 0.4);
+        }
+
+
+        .results {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            min-height: 150px;
+        }
+
+        .results h3 {
+            margin-bottom: 15px;
+            color: #ffd700;
+        }
+
+        .win-line {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+        }
+
+        .win-line.big-win {
+            background: linear-gradient(45deg, #f39c12, #e74c3c);
+            animation: bigWinGlow 1s ease-in-out infinite alternate;
+        }
+
+        @keyframes bigWinGlow {
+            from { box-shadow: 0 0 5px #f39c12; }
+            to { box-shadow: 0 0 15px #f39c12, 0 0 25px #e74c3c; }
+        }
+
+        .spinning {
+            /* Remove animation, will be handled by JavaScript */
+        }
+
+        .winning-symbol {
+            animation: winHighlight 0.5s ease-in-out 3 alternate;
+        }
+
+        @keyframes winHighlight {
+            from { 
+                background: linear-gradient(45deg, #1a1a1a, #2a2a2a);
+                transform: scale(1);
+            }
+            to { 
+                background: linear-gradient(45deg, #ffd700, #f39c12);
+                transform: scale(1.1);
+                box-shadow: 0 0 20px #ffd700;
+            }
+        }
+
+        .golden-symbol {
+            background: linear-gradient(45deg, #ffd700, #f39c12) !important;
+            color: #000;
+            font-weight: bold;
+            animation: goldenWinPulse 1s ease-in-out infinite;
+        }
+
+        @keyframes goldenWinPulse {
+            0%, 100% { 
+                transform: scale(1);
+                box-shadow: 0 0 5px #ffd700;
+            }
+            50% { 
+                transform: scale(1.05);
+                box-shadow: 0 0 15px #ffd700, 0 0 25px rgba(255, 215, 0, 0.5);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .game-container {
+                padding: 20px;
+                margin: 10px;
+            }
+            
+            .game-title {
+                font-size: 1.8em;
+            }
+            
+            .slot-machine {
+                gap: 5px;
+            }
+            
+            .reel {
+                width: 80px;
+                height: 320px;
+            }
+            
+            .symbol {
+                height: 80px;
+                font-size: 1.2em;
+            }
+            
+            .controls {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1 class="game-title">Way Game Slot Machine</h1>
+        
+        <div class="multiplier-display">
+            <div class="multiplier-item" id="mult-1">X1</div>
+            <div class="multiplier-item" id="mult-2">X2</div>
+            <div class="multiplier-item" id="mult-3">X3</div>
+            <div class="multiplier-item" id="mult-4">X5</div>
+        </div>
+        
+        <div class="game-info">
+            <div class="info-item">
+                <div>餘額</div>
+                <div id="balance">10000</div>
+            </div>
+            <div class="info-item">
+                <div>下注</div>
+                <div id="bet">100</div>
+            </div>
+            <div class="info-item">
+                <div>獲勝</div>
+                <div id="win">0</div>
+            </div>
+        </div>
+
+        <div class="slot-machine">
+            <div class="reel" id="reel-0">
+                <div class="reel-symbols" id="symbols-0"></div>
+            </div>
+            <div class="reel" id="reel-1">
+                <div class="reel-symbols" id="symbols-1"></div>
+            </div>
+            <div class="reel" id="reel-2">
+                <div class="reel-symbols" id="symbols-2"></div>
+            </div>
+            <div class="reel" id="reel-3">
+                <div class="reel-symbols" id="symbols-3"></div>
+            </div>
+            <div class="reel" id="reel-4">
+                <div class="reel-symbols" id="symbols-4"></div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="mode-selector">
+                <label for="game-mode">遊戲模式:</label>
+                <select id="game-mode" class="mode-select">
+                    <option value="yb">版本1</option>
+                    <option value="jl">版本2</option>
+                </select>
+            </div>
+            <div class="game-state-info">
+                <div class="current-mode">當前模式: <span id="current-mode-display">YB版本</span></div>
+                <div class="game-phase">遊戲階段: <span id="game-phase-display">基礎遊戲</span></div>
+                <div class="c1-counter">畫面C1: <span id="c1-count-display">0</span>/3</div>
+            </div>
+            <div class="control-buttons">
+                <div class="bet-controls">
+                    <button class="btn btn-bet" id="bet-minus">-</button>
+                    <span>下注金額</span>
+                    <button class="btn btn-bet" id="bet-plus">+</button>
+                </div>
+                <button class="btn btn-spin" id="spin-btn">旋轉</button>
+                <button class="btn btn-auto" id="auto-btn">自動</button>
+                <button class="btn btn-buy-feature" id="buy-feature-btn">購買特色</button>
+                <button class="btn btn-add-money" id="add-money-btn">+10000</button>
+            </div>
+        </div>
+
+        <div class="results" id="results">
+            <h3>遊戲結果</h3>
+            <div id="result-content">點擊旋轉開始遊戲</div>
+        </div>
+    </div>
+
+    <script src="data.js"></script>
+    <script>
+        class WayGameSlot {
+            constructor() {
+                this.symbols = ['WILD', 'WILD2', 'C1', 'M1', 'M2', 'M3', 'M4', 'A', 'K', 'Q', 'J', 'M1_G', 'M2_G', 'M3_G', 'M4_G', 'A_G', 'K_G', 'Q_G', 'J_G'];
+                
+                // Symbol order mapping for linkpoint (indices 0-7 correspond to M1,M2,M3,M4,A,K,Q,J)
+                this.symbolOrder = ['M1', 'M2', 'M3', 'M4', 'A', 'K', 'Q', 'J'];
+                
+                // Game mode and state
+                this.gameMode = 'yb'; // 'yb' or 'jl'
+                this.gamePhase = 'basegame'; // 'basegame' or 'freegame'
+                this.c1Count = 0;
+                this.freeGameSpinsRemaining = 0;
+                this.isFreegameTriggered = false;
+                this.currentFreeGameHighSurface = null; // 當前免費遊戲的 surface 數據
+                this.freeGameTotalWin = 0; // 免費遊戲序列總獲勝金額
+                this.lastSpinWin = 0; // 上次旋轉的獲勝金額
+                // Buy Feature相關屬性
+                this.buyFeatureCost = 40.5; // 40.5倍押注
+                this.maxC1ForFreegame = 3; // 需要的C1數量觸發免費遊戲
+                this.isBuyFeatureActive = false; // 是否正在執行Buy Feature
+                this.activeBuyFeatureMode = false; // 是否處於Buy Feature模式的免費遊戲中
+                this.buyFeatureTableSchedule = null; // Buy Feature的10場高低表序列
+                this.currentBuyFeatureSpinIndex = 0; // 當前Buy Feature場次索引
+                this.buyFeatureSelectedSymbolMode = null; // Buy Feature選中的符號模式
+                
+                // Freegame符號類型記錄
+                this.currentFreegameSymbolType = null; // 當前freegame選中的符號類型
+                this.currentFreegameSymbolData = null; // 當前freegame使用的符號數據
+                
+                // Freegame場次管理系統 (與simulation.py對齊)
+                this.freegameSpinSequence = null; // 場次序列 [1,1,0,0,0,1,0,0,0,0] (1=高表, 0=低表)
+                this.currentFreegameSpinIndex = 0; // 當前場次索引
+                this.freegameSelectedConfig = null; // 選中的場次配置 (如 [3,7])
+                this.freegameConfigs = [
+                    [0, 10], [1, 9], [2, 8], [3, 7], [4, 6], 
+                    [5, 5], [6, 4], [7, 3], [8, 2], [9, 1], [10, 0]
+                ]; // 11種場次配置
+                
+                // Basegame符號類型記錄
+                this.currentBasegameTableInfo = null; // 當前basegame選中的表信息
+                this.currentBasegameSymbolData = null; // 當前basegame使用的符號數據
+                
+                // Load parameters from data.js
+                this.loadGameParameters();
+                
+                this.reels = 5;
+                this.rows = 4;
+                this.balance = 100000;
+                this.currentBet = 100;
+                this.isSpinning = false;
+                this.currentGrid = [];
+                this.isAutoSpin = false;
+                this.autoSpinInterval = null;
+                this.cascadeMultiplier = 1;
+                this.cascadeCount = 0;
+                
+                this.initializeGame();
+            }
+
+            loadGameParameters() {
+                // Load parameters from data.js if available
+                if (typeof linkpoint !== 'undefined') {
+                    this.linkpoint = linkpoint;
+                    this.baseGameSurface = baseGameSurface;
+                    this.freeGameSurface = freeGameSurface;
+                    this.freeGameHighSurface = freeGameHighSurface;
+                    this.buyFeatureSurface = buyFeatureSurface;
+                    
+                    // Load symbol weights for base game
+                    this.baseGameHighSymbolWeight = baseGameHighSymbolWeight;
+                    this.baseGameLowSymbolWeight = baseGameLowSymbolWeight;
+                    this.freeGameHighSymbolWeight = freeGameHighSymbolWeight;
+                    this.freeGameLowSymbolWeight = freeGameLowSymbolWeight;
+                    
+                    // Load symbol content arrays for base game
+                    this.baseGameSymbolHigh = baseGameSymbolHigh;
+                    this.baseGameSymbolLow = baseGameSymbolLow;
+                    
+                    // Load freegame symbol content arrays
+                    // YB版本：不使用通用的freeGameSymbolHigh，因为YB版本使用AKQJ混合选择
+                    this.freeGameSymbolHigh = this.gameMode === 'yb' ? null : freeGameSymbolHighA;
+                    this.freeGameSymbolLow = freeGameSymbolLow;
+                    this.freeGameSymbolHighM = freeGameSymbolHighM;
+                    this.freeGameSymbolHighMM = freeGameSymbolHighMM;
+                    
+                    // Load special freegame symbol arrays (A, K, Q, J)
+                    this.freeGameSymbolHighA = freeGameSymbolHighA;
+                    this.freeGameSymbolHighK = freeGameSymbolHighK;
+                    this.freeGameSymbolHighQ = freeGameSymbolHighQ;
+                    this.freeGameSymbolHighJ = freeGameSymbolHighJ;
+                    
+                    // JL版本特殊映射 - 保持与simulation.py一致
+                    if (this.gameMode === 'jl') {
+                        // JL版本使用不同的符号数组映射，与simulation.py保持一致
+                        this.freeGameSymbolHighA = freeGameSymbolHighAK;    // A使用AK数据
+                        this.freeGameSymbolHighK = freeGameSymbolHighQJ;    // K使用QJ数据
+                        this.freeGameSymbolHighQ = freeGameSymbolHighM;     // Q使用M数据
+                        this.freeGameSymbolHighJ = freeGameSymbolHighMM;    // J使用MM数据
+                        console.log('🎯 JL版本：已映射符号数组以匹配simulation.py (A→AK, K→QJ, Q→M, J→MM)');
+                    }
+                    
+                    this.freeGameSymbolHighAK = freeGameSymbolHighAK;
+                    this.freeGameSymbolHighQJ = freeGameSymbolHighQJ;
+                    
+                    // Load buy feature symbol content
+                    this.buyFeatureSymbol = buyFeatureSymbol;
+                    
+                    // Load randomwild configurations (if available)
+                    this.baseGameHighRandomwild = baseGameHighRandomwild || [[0], [1]];
+                    this.baseGameLowRandomwild = baseGameLowRandomwild || [[0], [1]];
+                    this.freeGameHighRandomwildA = freeGameHighRandomwildA;
+                    this.freeGameHighRandomwildK = freeGameHighRandomwildK;
+                    this.freeGameHighRandomwildQ = freeGameHighRandomwildQ;
+                    this.freeGameHighRandomwildJ = freeGameHighRandomwildJ;
+                    
+                    // JL版本的randomwild参数映射 - 与符号数组映射保持一致
+                    if (this.gameMode === 'jl') {
+                        // JL版本randomwild映射与simulation.py保持一致
+                        this.freeGameHighRandomwildA = freeGameHighRandomwildAK;    // A使用AK的randomwild
+                        this.freeGameHighRandomwildK = freeGameHighRandomwildQJ;    // K使用QJ的randomwild
+                        this.freeGameHighRandomwildQ = freeGameHighRandomwildM;     // Q使用M的randomwild
+                        this.freeGameHighRandomwildJ = freeGameHighRandomwildMM;    // J使用MM的randomwild
+                        console.log('🎯 JL版本：已映射randomwild参数以匹配simulation.py');
+                    }
+                    
+                    // 保持向后兼容的属性映射
+                    this.freeGameHighRandomwildAK = freeGameHighRandomwildAK;
+                    this.freeGameHighRandomwildQJ = freeGameHighRandomwildQJ;
+                    this.freeGameHighRandomwildM = freeGameHighRandomwildM;
+                    this.freeGameHighRandomwildMM = freeGameHighRandomwildMM;
+                    this.freeGameLowRandomwild = freeGameLowRandomwild;
+                    this.buyFeatureRandomwild = buyFeatureRandomwild;
+                    
+                    // Load JL version buy feature parameter
+                    this.buyjl = buyjl;
+                    
+                    // Load table probability configurations
+                    this.table_high_probs = table_high_probs;
+                    this.table_low_probs = table_low_probs;
+                    this.baseGameSurface1 = baseGameSurface1;
+                    
+                    // Set mode-specific parameters
+                    this.setupModeParameters();
+                } else {
+                    // data.js not available - 根據用戶要求，不允許使用回退數據
+                    console.error('data.js 未加載，根據用戶要求，遊戲必須使用 data.js 中的真實數據');
+                    throw new Error('data.js 加載失敗，無法啟動遊戲。請確保 data.js 文件可用。');
+                }
+            }
+
+            setupModeParameters() {
+                // 驗證所有必需的data.js數據是否已加載
+                const requiredData = [
+                    'baseGameHighSymbolWeight', 'baseGameSymbolHigh',
+                    'baseGameLowSymbolWeight', 'baseGameSymbolLow'
+                ];
+                
+                const missingData = requiredData.filter(key => !this[key] || !Array.isArray(this[key]));
+                
+                if (missingData.length > 0) {
+                    console.error('缺少必要的data.js數據:', missingData);
+                    throw new Error(`data.js數據不完整，缺少: ${missingData.join(', ')}`);
+                }
+                
+                if (this.gameMode === 'yb') {
+                    // YB版本 - 与simulation.py完全对齐
+                    this.currentBaseGameSurface = this.baseGameSurface || [1.0, 4.0];
+                    // YB版本普通freegame：使用AKQJ混合模式（等权重选择4种高表）
+                    this.currentFreeGameSurface = [0.25, 0.25, 0.25, 0.25];  // AKQJ混合：A、K、Q、J各25%概率
+                    
+                    // YB版本的Buy Feature設定
+                    this.currentBuyFeatureSurface = [
+                        [0., 0., 0., 0., 11., 79., 10., 0., 0., 0., 0.],
+                        [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                        [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                        [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                        [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]
+                    ];
+                } else {
+                    // JL版本 - 僅使用已驗證的真實數據
+                    this.currentBaseGameSurface = this.baseGameSurface1 ? [this.baseGameSurface1[1], this.baseGameSurface1[0]] : [4.0, 1.0];
+                    this.currentFreeGameSurface = this.freeGameSurface?.[3] || [0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0.];
+                    
+                    // 驗證免費遊戲特殊符號數據是否存在
+                    if (!this.freeGameSymbolHighA) console.warn('freeGameSymbolHighA 數據缺失');
+                    if (!this.freeGameSymbolHighK) console.warn('freeGameSymbolHighK 數據缺失');
+                    if (!this.freeGameSymbolHighQ) console.warn('freeGameSymbolHighQ 數據缺失');
+                    if (!this.freeGameSymbolHighJ) console.warn('freeGameSymbolHighJ 數據缺失');
+                    
+                    // JL版本的Buy Feature設定
+                    if (this.buyjl) {
+                        // 將buyjl陣列重塑為5x11矩陣，第一行為0
+                        this.currentBuyFeatureSurface = [
+                            new Array(11).fill(0),
+                            ...this.reshapeArray(this.buyjl, 4, 11)
+                        ];
+                    } else {
+                        // JL版本默認設定
+                        this.currentBuyFeatureSurface = [
+                            [0., 10., 10., 10., 9., 0., 0., 0., 0., 0., 0.],
+                            [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                            [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                            [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                            [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]
+                        ];
+                    }
+                }
+                
+                // 設置當前使用的surface
+                this.currentSurface = this.currentBaseGameSurface;
+                
+                console.log(`模式切換到: ${this.gameMode} 版本`);
+                console.log('基礎遊戲符號數據已設置:', {
+                    baseGameHighSymbolWeight: !!this.baseGameHighSymbolWeight,
+                    baseGameSymbolHigh: !!this.baseGameSymbolHigh,
+                    baseGameLowSymbolWeight: !!this.baseGameLowSymbolWeight,
+                    baseGameSymbolLow: !!this.baseGameSymbolLow
+                });
+            }
+
+            reshapeArray(arr, rows, cols) {
+                // 將一維陣列重塑為二維陣列
+                const result = [];
+                for (let i = 0; i < rows; i++) {
+                    result.push(arr.slice(i * cols, (i + 1) * cols));
+                }
+                return result;
+            }
+
+            setupFallbackParameters() {
+                console.error('setupFallbackParameters被調用 - 這表示data.js加載失敗');
+                console.error('根據用戶要求，所有數據必須來自data.js，不允許自生成');
+                
+                // 嘗試從全域數據中獲取任何可用的數據
+                const globalData = window.globalGameData || {};
+                const availableData = {
+                    baseGameHighSymbolWeight: globalData.baseGameHighSymbolWeight || window.baseGameHighSymbolWeight,
+                    baseGameSymbolHigh: globalData.baseGameSymbolHigh || window.baseGameSymbolHigh,
+                    baseGameLowSymbolWeight: globalData.baseGameLowSymbolWeight || window.baseGameLowSymbolWeight,
+                    baseGameSymbolLow: globalData.baseGameSymbolLow || window.baseGameSymbolLow
+                };
+                
+                // 檢查是否有任何真實數據可用
+                const hasAnyRealData = Object.values(availableData).some(data => 
+                    data && Array.isArray(data) && data.length > 0
+                );
+                
+                if (!hasAnyRealData) {
+                    console.error('沒有找到任何data.js數據，遊戲無法使用自生成數據運行');
+                    throw new Error('data.js數據加載失敗，無法使用回退參數');
+                }
+                
+                console.log('使用有限的真實數據作為回退參數:', availableData);
+                
+                // 只返回真實存在的數據，不創建任何自生成內容
+                const fallbackParams = {
+                    surface: [1, 4], // 這是算法邏輯，不是遊戲內容
+                    baseGameHighSymbolWeight: availableData.baseGameHighSymbolWeight,
+                    baseGameSymbolHigh: availableData.baseGameSymbolHigh,
+                    baseGameLowSymbolWeight: availableData.baseGameLowSymbolWeight,
+                    baseGameSymbolLow: availableData.baseGameSymbolLow,
+                    
+                    // 免費遊戲使用基礎遊戲數據
+                    freeGameHighSurface: null, // 強制使用data.js中的數據
+                    freeGameHighSymbolWeight: availableData.baseGameHighSymbolWeight,
+                    freeGameSymbolHigh: availableData.baseGameSymbolHigh
+                };
+                
+                console.log('僅使用真實data.js數據的回退參數:', fallbackParams);
+                return fallbackParams;
+            }
+
+            // 創建符號映射表（對應simulation.py中的build_symbol_to_linkpoint函數）
+            buildSymbolToLinkpoint() {
+                const symbolToLp = new Array(19).fill(-1);
+                
+                // M1-M4 映射到 linkpoint 的 0-3
+                for (let i = 0; i < 4; i++) {
+                    symbolToLp[3 + i] = i;      // symbols[3-6] -> M1-M4
+                    symbolToLp[11 + i] = i;     // symbols[11-14] -> M1_G-M4_G
+                }
+                
+                // A,K,Q,J 映射到 linkpoint 的 4-7
+                for (let i = 0; i < 4; i++) {
+                    symbolToLp[7 + i] = 4 + i;   // symbols[7-10] -> A,K,Q,J
+                    symbolToLp[15 + i] = 4 + i;  // symbols[15-18] -> A_G,K_G,Q_G,J_G
+                }
+                
+                return symbolToLp;
+            }
+
+            // 根據當前模式和表面參數生成符號
+            getRandomSymbol() {
+                // 決定使用高表還是低表
+                const useHighTable = this.shouldUseHighTable();
+                
+                // 根據遊戲階段和表選擇權重矩陣
+                let weightMatrix;
+                if (this.gamePhase === 'basegame') {
+                    weightMatrix = useHighTable ? 
+                        this.baseGameHighSymbolWeight : 
+                        this.baseGameLowSymbolWeight;
+                } else {
+                    // 免費遊戲
+                    weightMatrix = useHighTable ? 
+                        this.freeGameHighSymbolWeight : 
+                        this.freeGameLowSymbolWeight;
+                }
+                
+                // 如果沒有權重矩陣，使用回退權重
+                if (!weightMatrix) {
+                    return this.getRandomSymbolFallback();
+                }
+                
+                // 選擇一個reel的權重（所有reel使用相同模式）
+                const reelWeights = weightMatrix[0];
+                
+                // 根據權重選擇符號索引
+                const symbolIndex = this.weightedRandomChoice(reelWeights);
+                
+                return this.mapIndexToSymbol(symbolIndex);
+            }
+
+            shouldUseHighTable() {
+                if (this.gamePhase === 'basegame') {
+                    // 基礎遊戲：根據baseGameSurface決定
+                    const [highWeight, lowWeight] = this.currentBaseGameSurface;
+                    const totalWeight = highWeight + lowWeight;
+                    return Math.random() < (highWeight / totalWeight);
+                } else {
+                    // 免費遊戲：根據模式決定
+                    if (this.gameMode === 'yb') {
+                        return Math.random() < 0.8; // YB版本80%使用高表
+                    } else {
+                        return Math.random() < 0.9; // JL版本90%使用高表
+                    }
+                }
+            }
+
+            weightedRandomChoice(weights) {
+                const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
+                if (totalWeight === 0) {
+                    return Math.floor(Math.random() * weights.length);
+                }
+                
+                const random = Math.random() * totalWeight;
+                let currentWeight = 0;
+                
+                for (let i = 0; i < weights.length; i++) {
+                    currentWeight += weights[i];
+                    if (random <= currentWeight) {
+                        return i;
+                    }
+                }
+                
+                return weights.length - 1; // 回退
+            }
+
+            getRandomSymbolFallback() {
+                const weights = Object.values(this.symbolWeights);
+                const symbolNames = Object.keys(this.symbolWeights);
+                const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
+                
+                const random = Math.random() * totalWeight;
+                let currentWeight = 0;
+                
+                for (let i = 0; i < weights.length; i++) {
+                    currentWeight += weights[i];
+                    if (random <= currentWeight) {
+                        return symbolNames[i];
+                    }
+                }
+                
+                return 'error'; // 回退
+            }
+
+            mapIndexToSymbol(index) {
+                // 檢查輸入是否有效
+                if (index === undefined || index === null || isNaN(index)) {
+                    console.warn('mapIndexToSymbol received invalid index:', index);
+                    return 'error'; // 回退到錯誤符號
+                }
+                
+                // 將權重矩陣索引映射到實際符號
+                // 這個映射需要與simulation.py中的順序一致
+                const symbolMapping = [
+                    'WILD',    // 0
+                    'WILD2',   // 1
+                    'C1',      // 2
+                    'M1',      // 3
+                    'M2',      // 4
+                    'M3',      // 5
+                    'M4',      // 6
+                    'A',       // 7
+                    'K',       // 8
+                    'Q',       // 9
+                    'J',       // 10
+                    'M1_G',    // 11
+                    'M2_G',    // 12
+                    'M3_G',    // 13
+                    'M4_G',    // 14
+                    'A_G',     // 15
+                    'K_G',     // 16
+                    'Q_G',     // 17
+                    'J_G'      // 18
+                ];
+                
+                // 確保索引在有效範圍內
+                const normalizedIndex = Math.floor(Math.abs(index));
+                
+                if (normalizedIndex < symbolMapping.length) {
+                    return symbolMapping[normalizedIndex];
+                }
+                
+                // 如果索引超出範圍，循環使用基本符號
+                const basicSymbols = ['M1', 'M2', 'M3', 'M4', 'A', 'K', 'Q', 'J'];
+                return basicSymbols[normalizedIndex % basicSymbols.length];
+            }
+
+            checkAndApplyRandomwild(excludePositions = []) {
+                // Randomwild只要有黃金符號被消除就進行抽選，不看消除數量多寡
+                if (this.goldenSymbolsConvertedThisRound === 0) {
+                    console.log('🌟 本輪沒有黃金符號被消除，不進行randomwild抽選');
+                    return false;
+                }
+
+                // 檢查randomwild是否已經使用過
+                if (this.randomwildUsed) {
+                    console.log('🌟 Randomwild已在本次旋轉中使用過');
+                    return false;
+                }
+
+                console.log(`🌟 檢測到有黃金符號被消除(${this.goldenSymbolsConvertedThisRound}個)，開始randomwild抽選`);
+
+                // 根據baseGameHighRandomwild參數進行抽選
+                const wildCount = this.getRandomwildCount();
+                
+                // 如果抽到0，表示不觸發randomwild
+                if (wildCount === 0) {
+                    console.log('🌟 Randomwild抽選結果: 0個額外wild，不觸發randomwild功能');
+                    return false;
+                }
+
+                // 觸發randomwild功能
+                this.randomwildTriggered = true;
+                this.randomwildUsed = true;
+                console.log(`🌟 Randomwild功能觸發！抽選結果: ${wildCount}個額外WILD2，將撒在轉軸2-5`);
+
+                // 撒出指定數量的WILD2符號在轉軸2-5，避開指定位置和C1位置
+                this.addRandomWilds(wildCount, excludePositions);
+                
+                return true; // 返回true表示randomwild已觸發
+            }
+
+            applyRandomwild() {
+                // 這個函數保留為向後兼容，但現在調用新的函數
+                return this.checkAndApplyRandomwild();
+            }
+
+            getRandomwildCount() {
+                // 根據當前遊戲階段和表類型選擇對應的RandomWild配置
+                let randomwildConfig;
+                let configName;
+                
+                if (this.gamePhase === 'basegame') {
+                    // 基礎遊戲：根據當前表類型選擇配置
+                    const isHighTable = this.currentBasegameTableInfo?.isHighTable ?? this.shouldUseHighTable();
+                    if (isHighTable) {
+                        randomwildConfig = this.baseGameHighRandomwild;
+                        configName = 'baseGameHighRandomwild';
+                    } else {
+                        randomwildConfig = this.baseGameLowRandomwild;
+                        configName = 'baseGameLowRandomwild';
+                    }
+                } else {
+                    // 免費遊戲：根據符號類型和表類型選擇配置
+                    if (this.currentFreegameSymbolType === -10) {
+                        // 低表場次
+                        randomwildConfig = this.freeGameLowRandomwild;
+                        configName = 'freeGameLowRandomwild';
+                    } else {
+                        // 高表場次：根據符號類型選擇
+                        const symbolType = this.currentFreegameSymbolType;
+                        if (symbolType === 'A') {
+                            randomwildConfig = this.freeGameHighRandomwildA;
+                            configName = 'freeGameHighRandomwildA';
+                        } else if (symbolType === 'K') {
+                            randomwildConfig = this.freeGameHighRandomwildK;
+                            configName = 'freeGameHighRandomwildK';
+                        } else if (symbolType === 'Q') {
+                            randomwildConfig = this.freeGameHighRandomwildQ;
+                            configName = 'freeGameHighRandomwildQ';
+                        } else if (symbolType === 'J') {
+                            randomwildConfig = this.freeGameHighRandomwildJ;
+                            configName = 'freeGameHighRandomwildJ';
+                        } else {
+                            // 回退到A配置
+                            randomwildConfig = this.freeGameHighRandomwildA;
+                            configName = 'freeGameHighRandomwildA (fallback)';
+                        }
+                    }
+                }
+                
+                console.log(`🎯 Randomwild配置選擇: 遊戲階段=${this.gamePhase}, 使用配置=${configName}`);
+                this.logRandomwildProbabilities(randomwildConfig, configName);
+                
+                // 檢查配置是否存在
+                if (!randomwildConfig) {
+                    console.warn(`${configName}參數缺失，使用回退邏輯`);
+                    // 回退邏輯：80%機率0個，20%機率2個
+                    return Math.random() < 0.8 ? 0 : 2;
+                }
+                
+                const [values, weights] = randomwildConfig;
+                
+                if (!values || !weights || values.length !== weights.length) {
+                    console.warn(`${configName}格式錯誤，使用回退邏輯`);
+                    return Math.random() < 0.8 ? 0 : 2;
+                }
+                
+                const totalWeight = weights.reduce((a, b) => a + b, 0);
+                if (totalWeight === 0) {
+                    console.warn(`${configName}權重總和為0，使用回退邏輯`);
+                    return 0;
+                }
+                
+                const random = Math.random() * totalWeight;
+                console.log(`🎯 Randomwild抽選: 配置=${configName}, 隨機值=${random.toFixed(4)}, 總權重=${totalWeight}`);
+                
+                let currentWeight = 0;
+                for (let i = 0; i < weights.length; i++) {
+                    currentWeight += weights[i];
+                    if (random <= currentWeight) {
+                        const selectedCount = values[i];
+                        console.log(`🎯 Randomwild抽選結果: 配置=${configName}, 索引=${i}, 數值=${selectedCount}, 權重=${weights[i]}`);
+                        return selectedCount; // 直接返回抽中的數值，包括0
+                    }
+                }
+                
+                // 回退到最後一個值
+                const fallbackCount = values[values.length - 1];
+                console.log(`🎯 Randomwild抽選回退: 配置=${configName}, ${fallbackCount}`);
+                return fallbackCount;
+            }
+
+            // 輔助函數：顯示RandomWild機率分布
+            logRandomwildProbabilities(config, configName) {
+                if (!config) return;
+                
+                const [values, weights] = config;
+                if (!values || !weights || values.length !== weights.length) return;
+                
+                const totalWeight = weights.reduce((a, b) => a + b, 0);
+                if (totalWeight === 0) return;
+                
+                console.log(`📊 ${configName} 機率分布:`);
+                for (let i = 0; i < values.length; i++) {
+                    const probability = (weights[i] / totalWeight * 100).toFixed(2);
+                    console.log(`   ${values[i]}個wild: ${probability}% (權重=${weights[i]})`);
+                }
+            }
+
+            // 這個函數已被廢棄，黃金符號轉換現在在removeWinningSymbols中處理
+            // 保留此函數僅為向後兼容性
+            convertGoldenSymbolsInWinningLines(winningPositions) {
+                console.warn('convertGoldenSymbolsInWinningLines已廢棄，請使用removeWinningSymbols中的轉換邏輯');
+                return 0;
+            }
+
+            convertWildToWild2(convertedPositions) {
+                // 將剛從黃金符號轉換的WILD改為WILD2，以標示randomwild觸發
+                console.log(`🌟 Randomwild觸發，將 ${convertedPositions.length} 個從黃金符號轉換的WILD改為WILD2`);
+                
+                for (const pos of convertedPositions) {
+                    // 更新網格中的符號
+                    this.currentGrid[pos.reel][pos.row] = 'WILD2';
+                    
+                    // 更新視覺元素
+                    pos.element.className = 'symbol WILD2';
+                    
+                    // 更新圖片
+                    const img = pos.element.querySelector('img');
+                    if (img) {
+                        const newImg = this.createSymbolImage('WILD2');
+                        pos.element.replaceChild(newImg, img);
+                    }
+                }
+            }
+
+            addRandomWilds(count, excludePositions = []) {
+                // Add random WILD2 symbols to reels 2-5 (indices 1-4), excluding C1 and specified positions
+                const validPositions = [];
+                
+                for (let reel = 1; reel < this.reels; reel++) { // Skip reel 0
+                    for (let row = 0; row < this.rows; row++) {
+                        const symbol = this.currentGrid[reel][row];
+                        const posKey = `${reel}-${row}`;
+                        
+                        // 只排除C1和指定要排除的位置（如原本的WILD）
+                        const shouldExclude = symbol === 'C1' || 
+                                            excludePositions.some(pos => pos.reel === reel && pos.row === row);
+                        
+                        if (!shouldExclude) {
+                            validPositions.push({reel, row});
+                        }
+                    }
+                }
+                
+                // Randomly select positions to convert to WILD2
+                const positionsToConvert = Math.min(count, validPositions.length);
+                console.log(`🌟 嘗試撒出 ${count} 個額外WILD2，可用位置: ${validPositions.length}，實際撒出: ${positionsToConvert}`);
+                
+                for (let i = 0; i < positionsToConvert; i++) {
+                    const randomIndex = Math.floor(Math.random() * validPositions.length);
+                    const {reel, row} = validPositions.splice(randomIndex, 1)[0];
+                    const originalSymbol = this.currentGrid[reel][row];
+                    this.currentGrid[reel][row] = 'WILD2';
+                    console.log(`🌟 位置[${reel},${row}]從 ${originalSymbol} 變為 WILD2`);
+                    
+                    // 更新視覺
+                    this.updateSymbolVisual(reel, row, 'WILD2');
+                }
+            }
+
+            updateSymbolVisual(reel, row, newSymbol) {
+                // 更新指定位置符號的視覺效果
+                const symbolsContainer = document.getElementById(`symbols-${reel}`);
+                const reelGroup = symbolsContainer.children[0];
+                
+                if (reelGroup && reelGroup.children[row]) {
+                    const symbolElement = reelGroup.children[row];
+                    
+                    // 更新class
+                    symbolElement.className = `symbol ${newSymbol}`;
+                    
+                    // 更新圖片
+                    const img = symbolElement.querySelector('img');
+                    if (img) {
+                        const newImg = this.createSymbolImage(newSymbol);
+                        symbolElement.replaceChild(newImg, img);
+                    }
+                    
+                    // 添加閃爍效果表示新增
+                    symbolElement.style.transition = 'all 0.3s ease-out';
+                    symbolElement.style.transform = 'scale(1.2)';
+                    symbolElement.style.filter = 'brightness(1.5)';
+                    
+                    setTimeout(() => {
+                        symbolElement.style.transform = 'scale(1)';
+                        symbolElement.style.filter = 'brightness(1)';
+                    }, 300);
+                }
+            }
+
+            initializeGame() {
+                this.createReelSymbols();
+                this.bindEvents();
+                this.updateDisplay();
+                this.updateMultiplierDisplay();
+            }
+
+            createReelSymbols() {
+                for (let reel = 0; reel < this.reels; reel++) {
+                    const symbolsContainer = document.getElementById(`symbols-${reel}`);
+                    symbolsContainer.innerHTML = '';
+                    
+                    // Create 4 symbols for each reel with random initial symbols
+                    const initialSymbols = ['A', 'K', 'Q', 'J', 'M1', 'M2', 'M3', 'M4'];
+                    for (let i = 0; i < 4; i++) {
+                        const symbolDiv = document.createElement('div');
+                        symbolDiv.className = 'symbol visible'; // Add visible class by default
+                        symbolDiv.style.top = `${i * 120}px`;
+                        
+                        // Add image with random symbol for initial display
+                        const randomSymbol = initialSymbols[Math.floor(Math.random() * initialSymbols.length)];
+                        const img = this.createSymbolImage(randomSymbol);
+                        symbolDiv.appendChild(img);
+                        
+                        symbolsContainer.appendChild(symbolDiv);
+                    }
+                }
+            }
+
+            getSymbolImagePath(symbol) {
+                const basePath = 'picture/';
+                // Use png format as that's what we have
+                return basePath + symbol + '.png';
+            }
+
+            // Helper function to get base symbol name (remove _G suffix)
+            getBaseSymbol(symbol) {
+                if (!symbol || typeof symbol !== 'string') {
+                    console.warn('getBaseSymbol received invalid symbol:', symbol);
+                    return 'error'; // 回退到錯誤符號
+                }
+                return symbol.endsWith('_G') ? symbol.slice(0, -2) : symbol;
+            }
+
+            // Get multiplier based on cascade count
+            getCascadeMultiplier(cascadeCount) {
+                // In free game mode, use double multipliers
+                if (this.gamePhase === 'freegame') {
+                    if (cascadeCount === 0) return 2;      // First elimination: x2
+                    if (cascadeCount === 1) return 4;      // Second elimination: x4
+                    if (cascadeCount === 2) return 6;      // Third elimination: x6
+                    return 10;                             // Fourth+ elimination: x10
+                } else {
+                    // Base game multipliers
+                    if (cascadeCount === 0) return 1;      // First elimination: x1
+                    if (cascadeCount === 1) return 2;      // Second elimination: x2
+                    if (cascadeCount === 2) return 3;      // Third elimination: x3
+                    return 5;                              // Fourth+ elimination: x5
+                }
+            }
+
+            // Update multiplier display
+            updateMultiplierDisplay() {
+                // Update multiplier values based on game phase
+                if (this.gamePhase === 'freegame') {
+                    // Free game multipliers: x2, x4, x6, x10
+                    document.getElementById('mult-1').textContent = 'X2';
+                    document.getElementById('mult-2').textContent = 'X4';
+                    document.getElementById('mult-3').textContent = 'X6';
+                    document.getElementById('mult-4').textContent = 'X10';
+                } else {
+                    // Base game multipliers: x1, x2, x3, x5
+                    document.getElementById('mult-1').textContent = 'X1';
+                    document.getElementById('mult-2').textContent = 'X2';
+                    document.getElementById('mult-3').textContent = 'X3';
+                    document.getElementById('mult-4').textContent = 'X5';
+                }
+                
+                // Clear all active states
+                for (let i = 1; i <= 4; i++) {
+                    document.getElementById(`mult-${i}`).classList.remove('active');
+                }
+                
+                // Highlight current multiplier
+                const displayIndex = Math.min(this.cascadeCount + 1, 4);
+                document.getElementById(`mult-${displayIndex}`).classList.add('active');
+            }
+
+            // Reset multiplier for new spin
+            resetMultiplier() {
+                this.cascadeCount = 0;
+                this.cascadeMultiplier = 1;
+                this.updateMultiplierDisplay();
+            }
+
+            // Reset randomwild state for new spin
+            resetRandomwildState() {
+                this.randomwildTriggered = false;
+                this.randomwildUsed = false;
+                this.goldenSymbolsConvertedThisRound = 0;
+                this.pendingRandomwildCheck = null;
+            }
+
+            // Helper function to create image with fallback
+            createSymbolImage(symbol) {
+                const img = document.createElement('img');
+                const basePath = 'picture/';
+                
+                // 直接使用png格式，因為所有圖片都是png
+                img.src = basePath + symbol + '.png';
+                img.alt = symbol;
+                img.style.width = '80%';
+                img.style.height = '80%';
+                img.style.objectFit = 'contain';
+                
+                // 如果png也失敗，使用預設圖片
+                img.onerror = () => {
+                    console.warn(`Failed to load image: ${img.src}`);
+                    img.src = basePath + 'error.png'; // 使用error作為預設圖片
+                };
+                
+                return img;
+            }
+
+            generateNewSymbolForReel(reelIndex) {
+                // 為特定輪盤生成新符號，使用與spin相同的邏輯
+                try {
+                    if (this.gamePhase === 'basegame') {
+                        return this.generateBasegameSymbolForReel(reelIndex);
+                    } else {
+                        return this.generateFreegameSymbolForReel(reelIndex);
+                    }
+                } catch (error) {
+                    console.warn('generateNewSymbolForReel failed, using fallback:', error);
+                    return this.getRandomSymbolFallback();
+                }
+            }
+
+            generateBasegameSymbolForReel(reelIndex) {
+                // 基礎遊戲：為特定輪盤生成符號，使用當前basegame選中的表
+                const tableInfo = this.currentBasegameTableInfo;
+                const tableInfoStr = tableInfo ? 
+                    `${tableInfo.tableName} (selectedTable=${tableInfo.selectedTable})` : 
+                    '無記錄 (重新抽選)';
+                console.log(`🎯 [補充符號] 為輪盤${reelIndex}生成basegame符號，使用表: ${tableInfoStr}`);
+                
+                // 如果有記錄的表數據，使用它
+                if (this.currentBasegameSymbolData && this.currentBasegameSymbolData.weights && this.currentBasegameSymbolData.reels) {
+                    const symbolWeights = this.currentBasegameSymbolData.weights;
+                    const symbolReels = this.currentBasegameSymbolData.reels;
+                    
+                    // 使用特定輪盤的權重和內容
+                    const reelWeights = symbolWeights[reelIndex];
+                    const reelContent = symbolReels[reelIndex];
+                    
+                    if (!reelWeights || !reelContent) {
+                        console.warn(`Missing reel data for basegame reel ${reelIndex}, fallback to re-selection`);
+                        return this.generateBasegameSymbolForReelFallback(reelIndex);
+                    }
+                    
+                    // 確保數組長度一致
+                    const minLength = Math.min(reelWeights.length, reelContent.length);
+                    if (minLength === 0) {
+                        console.warn(`Empty basegame reel data for reel ${reelIndex}, fallback to re-selection`);
+                        return this.generateBasegameSymbolForReelFallback(reelIndex);
+                    }
+                    
+                    // 直接從reelContent隨機選擇（因為權重通常都是1.0）
+                    let selectedIndex = Math.floor(Math.random() * minLength);
+                    let symbolIndex = reelContent[selectedIndex];
+                    
+                    // 如果選中的符號是undefined或無效，嘗試重新選擇
+                    let attempts = 0;
+                    while ((symbolIndex === undefined || symbolIndex === null || isNaN(symbolIndex)) && attempts < 10) {
+                        selectedIndex = Math.floor(Math.random() * minLength);
+                        symbolIndex = reelContent[selectedIndex];
+                        attempts++;
+                    }
+                    
+                    // 如果仍然無效，使用回退邏輯
+                    if (symbolIndex === undefined || symbolIndex === null || isNaN(symbolIndex)) {
+                        console.warn(`Invalid basegame symbol at reel ${reelIndex}, index ${selectedIndex}:`, symbolIndex);
+                        return this.generateBasegameSymbolForReelFallback(reelIndex);
+                    }
+                    
+                    // 確保symbolIndex是有效的數字
+                    symbolIndex = Math.round(Number(symbolIndex));
+                    
+                    const symbol = this.mapIndexToSymbol(symbolIndex);
+                    console.log(`🎯 [補充符號] generateBasegameSymbolForReel(${reelIndex}): 表=${tableInfo?.tableName}, selected index=${selectedIndex}, symbolIndex=${symbolIndex}, symbol=${symbol}`);
+                    return symbol;
+                }
+                
+                // 如果沒有記錄的表數據，重新進行表抽選
+                console.warn('🎯 [補充符號] 沒有basegame表數據，重新進行表抽選');
+                return this.generateBasegameSymbolForReelFallback(reelIndex);
+            }
+
+            generateBasegameSymbolForReelFallback(reelIndex) {
+                // 基礎遊戲回退邏輯：重新進行表抽選（原始邏輯）
+                const surface = this.currentSurface || [1, 4];
+                const totalWeight = surface[0] + surface[1];
+                const useHigh = Math.random() < (surface[0] / totalWeight);
+                
+                let symbolWeights, symbolReels;
+                if (useHigh) {
+                    symbolWeights = this.baseGameHighSymbolWeight;
+                    symbolReels = this.baseGameSymbolHigh;
+                    if (!symbolWeights || !symbolReels) {
+                        throw new Error('baseGameHighSymbolWeight 或 baseGameSymbolHigh 數據缺失');
+                    }
+                } else {
+                    symbolWeights = this.baseGameLowSymbolWeight;
+                    symbolReels = this.baseGameSymbolLow;
+                    if (!symbolWeights || !symbolReels) {
+                        throw new Error('baseGameLowSymbolWeight 或 baseGameSymbolLow 數據缺失');
+                    }
+                }
+                
+                // 使用特定輪盤的權重和內容
+                const reelWeights = symbolWeights[reelIndex];
+                const reelContent = symbolReels[reelIndex];
+                
+                if (!reelWeights || !reelContent) {
+                    console.warn(`Missing reel data for reel ${reelIndex}`);
+                    return this.getRandomSymbolFallback();
+                }
+                
+                // 確保數組長度一致
+                const minLength = Math.min(reelWeights.length, reelContent.length);
+                if (minLength === 0) {
+                    console.warn(`Empty reel data for reel ${reelIndex}`);
+                    return this.getRandomSymbolFallback();
+                }
+                
+                // 直接從reelContent隨機選擇（因為權重通常都是1.0）
+                let selectedIndex = Math.floor(Math.random() * minLength);
+                let symbolIndex = reelContent[selectedIndex];
+                
+                // 如果選中的符號是undefined或無效，嘗試重新選擇
+                let attempts = 0;
+                while ((symbolIndex === undefined || symbolIndex === null || isNaN(symbolIndex)) && attempts < 10) {
+                    selectedIndex = Math.floor(Math.random() * minLength);
+                    symbolIndex = reelContent[selectedIndex];
+                    attempts++;
+                }
+                
+                // 如果仍然無效，使用回退符號
+                if (symbolIndex === undefined || symbolIndex === null || isNaN(symbolIndex)) {
+                    console.warn(`Invalid basegame fallback symbol at reel ${reelIndex}, index ${selectedIndex}:`, symbolIndex);
+                    return 'error'; // 直接回退到錯誤符號
+                }
+                
+                // 確保symbolIndex是有效的數字
+                symbolIndex = Math.round(Number(symbolIndex));
+                
+                const symbol = this.mapIndexToSymbol(symbolIndex);
+                console.log(`🎯 [回退] generateBasegameSymbolForReelFallback(${reelIndex}): 重新抽選=${useHigh ? '高表' : '低表'}, selected index=${selectedIndex}, symbolIndex=${symbolIndex}, symbol=${symbol}`);
+                return symbol;
+            }
+
+            generateFreegameSymbolForReel(reelIndex) {
+                // 免費遊戲：為特定輪盤生成符號，使用當前freegame選中的符號類型
+                let symbolTypeInfo;
+                if (this.currentFreegameSymbolType === -10) {
+                    symbolTypeInfo = '低表場次';
+                } else if (this.currentFreegameSymbolType !== null) {
+                    symbolTypeInfo = `${this.currentFreegameSymbolType} (${this.getDetailedSymbolTypeName(this.currentFreegameSymbolType)})`;
+                } else {
+                    symbolTypeInfo = 'null (無記錄)';
+                }
+                console.log(`🎯 [補充符號] 為輪盤${reelIndex}生成freegame符號，使用符號類型: ${symbolTypeInfo}`);
+                
+                // 如果有記錄的符號數據，使用它
+                if (this.currentFreegameSymbolData && this.currentFreegameSymbolData.weights && this.currentFreegameSymbolData.reels) {
+                    const symbolWeights = this.currentFreegameSymbolData.weights;
+                    const symbolReels = this.currentFreegameSymbolData.reels;
+                    
+                    // 使用特定輪盤的權重和內容
+                    const reelWeights = symbolWeights[reelIndex];
+                    const reelContent = symbolReels[reelIndex];
+                    
+                    if (!reelWeights || !reelContent) {
+                        console.warn(`Missing reel data for freegame reel ${reelIndex}, falling back`);
+                        return this.generateBasegameSymbolForReel(reelIndex);
+                    }
+                    
+                    // 確保數組長度一致
+                    const minLength = Math.min(reelWeights.length, reelContent.length);
+                    if (minLength === 0) {
+                        console.warn(`Empty freegame reel data for reel ${reelIndex}, falling back`);
+                        return this.generateBasegameSymbolForReel(reelIndex);
+                    }
+                    
+                    // 直接從reelContent隨機選擇（因為權重通常都是1.0）
+                    let selectedIndex = Math.floor(Math.random() * minLength);
+                    let symbolIndex = reelContent[selectedIndex];
+                    
+                    // 如果選中的符號是undefined或無效，嘗試重新選擇
+                    let attempts = 0;
+                    while ((symbolIndex === undefined || symbolIndex === null || isNaN(symbolIndex)) && attempts < 10) {
+                        selectedIndex = Math.floor(Math.random() * minLength);
+                        symbolIndex = reelContent[selectedIndex];
+                        attempts++;
+                    }
+                    
+                    // 如果仍然無效，使用回退符號
+                    if (symbolIndex === undefined || symbolIndex === null || isNaN(symbolIndex)) {
+                        console.warn(`Invalid freegame symbol at reel ${reelIndex}, index ${selectedIndex}:`, symbolIndex);
+                        return this.generateBasegameSymbolForReel(reelIndex);
+                    }
+                    
+                    // 確保symbolIndex是有效的數字
+                    symbolIndex = Math.round(Number(symbolIndex));
+                    
+                    const symbol = this.mapIndexToSymbol(symbolIndex);
+                    const displayName = this.currentFreegameSymbolType === -10 ? 
+                        '低表場次' : this.getDetailedSymbolTypeName(this.currentFreegameSymbolType);
+                    console.log(`🎯 [補充符號] generateFreegameSymbolForReel(${reelIndex}): 符號類型=${displayName}, selected index=${selectedIndex}, symbolIndex=${symbolIndex}, symbol=${symbol}`);
+                    return symbol;
+                }
+                
+                // 如果沒有記錄的符號數據，回退到基礎遊戲邏輯
+                console.warn('🎯 [補充符號] 沒有freegame符號數據，回退到基礎遊戲邏輯');
+                return this.generateBasegameSymbolForReel(reelIndex);
+            }
+
+            getRandomSymbol() {
+                // 使用新的符號生成邏輯
+                try {
+                    return this.generateSymbolFromSurface();
+                } catch (error) {
+                    console.warn('generateSymbolFromSurface failed, using fallback:', error);
+                    return this.getRandomSymbolFallback();
+                }
+            }
+
+            generateSymbolFromSurface() {
+                // 根據遊戲階段選擇不同的符號生成邏輯
+                if (this.gamePhase === 'basegame') {
+                    return this.generateBasegameSymbol();
+                } else {
+                    return this.generateFreegameSymbol();
+                }
+            }
+
+            generateBasegameSymbol() {
+                // 基礎遊戲符號生成
+                const surface = this.currentSurface || [1, 4];
+                const totalWeight = surface[0] + surface[1];
+                const useHigh = Math.random() < (surface[0] / totalWeight);
+                
+                let symbolWeights;
+                if (useHigh) {
+                    // 使用高表權重
+                    symbolWeights = this.baseGameHighSymbolWeight?.[0] || [1, 1, 3, 4, 4, 4, 4, 6, 6, 6, 6, 2, 2, 2, 2, 3, 3, 3, 3];
+                } else {
+                    // 使用低表權重  
+                    symbolWeights = this.baseGameLowSymbolWeight?.[0] || [0.5, 0.5, 2, 6, 6, 6, 6, 10, 10, 10, 10, 1, 1, 1, 1, 2, 2, 2, 2];
+                }
+                
+                // 根據權重選擇符號索引
+                const symbolIndex = this.weightedRandomChoice(symbolWeights);
+                return this.mapIndexToSymbol(symbolIndex);
+            }
+
+            generateFreegameSymbol() {
+                // 免費遊戲符號生成
+                const symbolWeights = this.freeGameHighSymbolWeight?.[0] || [2, 2, 5, 3, 3, 3, 3, 5, 5, 5, 5, 8, 8, 8, 8, 10, 10, 10, 10];
+                
+                const symbolIndex = this.weightedRandomChoice(symbolWeights);
+                return this.mapIndexToSymbol(symbolIndex);
+            }
+
+            // JavaScript版本的simulation.py核心邏輯
+            sampleSequencesWeighted(weightArray, contentArray, n, seed = null) {
+                if (seed !== null && typeof Math.seedrandom === 'function') {
+                    Math.seedrandom(seed);
+                }
+                
+                if (!weightArray || !contentArray || weightArray.length === 0 || contentArray.length === 0) {
+                    console.error('Invalid weightArray or contentArray:', {weightArray, contentArray});
+                    return this.generateFallbackGrid(n);
+                }
+                
+                const lines = weightArray.length;
+                const length = weightArray[0] ? weightArray[0].length : 0;
+                const output = [];
+                
+                console.log('sampleSequencesWeighted input:', {
+                    lines,
+                    length,
+                    weightArrayLength: weightArray.length,
+                    contentArrayLength: contentArray.length,
+                    firstWeightRow: weightArray[0]?.slice(0, 10),
+                    firstContentRow: contentArray[0]?.slice(0, 10)
+                });
+                
+                for (let i = 0; i < lines; i++) {
+                    output[i] = [];
+                    const w = weightArray[i];
+                    const content = contentArray[i];
+                    
+                    if (!w || !content) {
+                        console.warn(`Missing data for line ${i}:`, {w, content});
+                        // 使用回退符號
+                        for (let j = 0; j < n; j++) {
+                            output[i][j] = -1; // 使用特殊值表示error符號
+                        }
+                        continue;
+                    }
+                    
+                    // 實現和simulation.py一致的加權抽樣
+                    const weightSum = w.reduce((sum, weight) => sum + weight, 0);
+                    let startPosition;
+                    
+                    if (weightSum === 0) {
+                        // 如果權重全為0，隨機選擇起始位置
+                        startPosition = Math.floor(Math.random() * content.length);
+                    } else {
+                        // 根據權重進行加權抽樣選擇起始位置
+                        const normalizedWeights = w.map(weight => weight / weightSum);
+                        const cumulativeWeights = [];
+                        let cumSum = 0;
+                        for (let weight of normalizedWeights) {
+                            cumSum += weight;
+                            cumulativeWeights.push(cumSum);
+                        }
+                        
+                        const random = Math.random();
+                        startPosition = 0;
+                        for (let k = 0; k < cumulativeWeights.length; k++) {
+                            if (random <= cumulativeWeights[k]) {
+                                startPosition = k;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    console.log(`Reel ${i}: weighted start position=${startPosition}, content length=${content.length}, weightSum=${weightSum}`);
+                    
+                    // 從加權選擇的起始位置開始取n個連續元素
+                    for (let j = 0; j < n; j++) {
+                        const idx = (startPosition + j) % content.length;
+                        const symbolIndex = content[idx];
+                        output[i][j] = Math.round(symbolIndex); // 確保是整數
+                        console.log(`Reel ${i}, Row ${j}: idx=${idx}, symbolIndex=${symbolIndex}, final=${output[i][j]}`);
+                    }
+                }
+                
+                console.log('sampleSequencesWeighted output:', output);
+                return output;
+            }
+
+            generateFallbackGrid(n) {
+                // 從data.js內容數組中提取真實符號分布 - 不使用任何自生成數據
+                console.warn('使用data.js數據的回退網格生成');
+                
+                // 使用 baseGameSymbolHigh 的實際分布作為回退
+                const fallbackContentArrays = this.baseGameSymbolHigh || [
+                    // 如果baseGameSymbolHigh不可用，使用baseGameSymbolLow
+                    ...(this.baseGameSymbolLow || [])
+                ];
+                
+                if (!fallbackContentArrays || fallbackContentArrays.length === 0) {
+                    console.error('所有data.js內容數組都不可用，這不應該發生');
+                    // 最後的緊急措施：返回最小的有效網格
+                    const output = [];
+                    for (let i = 0; i < 5; i++) {
+                        output[i] = [];
+                        for (let j = 0; j < n; j++) {
+                            output[i][j] = -1; // error符號
+                        }
+                    }
+                    return output;
+                }
+                
+                const output = [];
+                for (let i = 0; i < 5; i++) { // 5輪
+                    output[i] = [];
+                    const reelIndex = Math.min(i, fallbackContentArrays.length - 1);
+                    const reelContent = fallbackContentArrays[reelIndex];
+                    
+                    if (!reelContent || reelContent.length === 0) {
+                        // 使用其他輪的數據
+                        const alternativeReel = fallbackContentArrays.find(reel => reel && reel.length > 0);
+                        if (alternativeReel) {
+                            for (let j = 0; j < n; j++) {
+                                const randomIndex = Math.floor(Math.random() * alternativeReel.length);
+                                output[i][j] = Math.round(alternativeReel[randomIndex]);
+                            }
+                        } else {
+                            for (let j = 0; j < n; j++) {
+                                output[i][j] = -1; // error符號作為最後手段
+                            }
+                        }
+                        continue;
+                    }
+                    
+                    // 從該輪的實際content數組中隨機選擇起始位置
+                    const startPosition = Math.floor(Math.random() * reelContent.length);
+                    for (let j = 0; j < n; j++) {
+                        const idx = (startPosition + j) % reelContent.length;
+                        output[i][j] = Math.round(reelContent[idx]);
+                    }
+                }
+                
+                console.log('使用data.js實際數據的回退網格已生成:', output);
+                return output;
+            }
+
+            // 符號映射函數
+            buildSymbolToLinkpoint() {
+                const symbolToLp = new Array(19).fill(-1);
+                // M1~M4映射到0~3
+                for (let i = 0; i < 4; i++) {
+                    symbolToLp[3 + i] = i;      // 符號3,4,5,6 -> linkpoint 0,1,2,3
+                    symbolToLp[11 + i] = i;     // 符號11,12,13,14 -> linkpoint 0,1,2,3
+                }
+                // A~J映射到4~7
+                for (let i = 0; i < 4; i++) {
+                    symbolToLp[7 + i] = 4 + i;  // 符號7,8,9,10 -> linkpoint 4,5,6,7
+                    symbolToLp[15 + i] = 4 + i; // 符號15,16,17,18 -> linkpoint 4,5,6,7
+                }
+                return symbolToLp;
+            }
+
+            // 修改為使用simulation.py的真實邏輯
+            generateGrid() {
+                if (this.gamePhase === 'basegame') {
+                    return this.generateBasegameGrid();
+                } else {
+                    return this.generateFreegameGrid();
+                }
+            }
+
+            generateBasegameGrid() {
+                // 完整的14張表抽選邏輯 (與simulation.py完全對齊)
+                const surface = this.currentSurface || [1, 4]; // [high, low]
+                
+                // 1. 計算高低表權重
+                const totalSurfaceWeight = surface[0] + surface[1];
+                const highSurfaceWeight = surface[0] / totalSurfaceWeight;  // 0.2
+                const lowSurfaceWeight = surface[1] / totalSurfaceWeight;   // 0.8
+                
+                // 2. 計算7張高表和7張低表的權重 (目前使用平均分配)
+                const tableHighProbs = [1/7, 1/7, 1/7, 1/7, 1/7, 1/7, 1/7];
+                const tableLowProbs = [1/7, 1/7, 1/7, 1/7, 1/7, 1/7, 1/7];
+                
+                // 3. 計算最終14張表的權重
+                const allTableProbs = [];
+                // 高表權重 = 高表面權重 × 各高表內部權重
+                for (let i = 0; i < 7; i++) {
+                    allTableProbs.push(highSurfaceWeight * tableHighProbs[i]);
+                }
+                // 低表權重 = 低表面權重 × 各低表內部權重  
+                for (let i = 0; i < 7; i++) {
+                    allTableProbs.push(lowSurfaceWeight * tableLowProbs[i]);
+                }
+                
+                // 4. 選擇一張表 (0-6是高表，7-13是低表)
+                const selectedTable = this.weightedRandomChoice(allTableProbs);
+                const isHighTable = selectedTable < 7;
+                const tableIndex = selectedTable % 7;
+                
+                console.log('🎲 [基礎遊戲] 表選擇:', {
+                    surface,
+                    highSurfaceWeight,
+                    lowSurfaceWeight,
+                    selectedTable,
+                    isHighTable: isHighTable ? '高表' : '低表',
+                    tableIndex,
+                    tableName: isHighTable ? `高表${tableIndex}` : `低表${tableIndex}`
+                });
+                
+                // 5. 獲取選中表格的符號數據
+                let symbolWeights, symbolReels;
+                if (isHighTable) {
+                    // 目前使用單一高表數據，後續可擴展為7張不同高表
+                    symbolWeights = this.baseGameHighSymbolWeight;
+                    symbolReels = this.baseGameSymbolHigh;
+                    if (!symbolWeights || !symbolReels) {
+                        throw new Error('baseGameHighSymbolWeight 或 baseGameSymbolHigh 數據缺失');
+                    }
+                    console.log(`🎲 [基礎遊戲] ✅ 使用高表${tableIndex} (baseGameSymbolHigh)`);
+                } else {
+                    // 目前使用單一低表數據，後續可擴展為7張不同低表
+                    symbolWeights = this.baseGameLowSymbolWeight;
+                    symbolReels = this.baseGameSymbolLow;
+                    if (!symbolWeights || !symbolReels) {
+                        throw new Error('baseGameLowSymbolWeight 或 baseGameSymbolLow 數據缺失');
+                    }
+                    console.log(`🎲 [基礎遊戲] ✅ 使用低表${tableIndex} (baseGameSymbolLow)`);
+                }
+                
+                // 記錄當前basegame的表信息和符號數據，用於後續補充符號
+                this.currentBasegameTableInfo = {
+                    selectedTable,
+                    isHighTable,
+                    tableIndex,
+                    tableName: isHighTable ? `高表${tableIndex}` : `低表${tableIndex}`
+                };
+                this.currentBasegameSymbolData = {
+                    weights: symbolWeights,
+                    reels: symbolReels
+                };
+                console.log('🎲 [基礎遊戲] 記錄表信息用於補充:', {
+                    tableName: this.currentBasegameTableInfo.tableName,
+                    hasWeights: !!symbolWeights,
+                    hasReels: !!symbolReels
+                });
+                
+                console.log('🎲 [基礎遊戲] 選中的表數據:', {
+                    weightCount: symbolWeights?.length,
+                    reelCount: symbolReels?.length,
+                    firstWeight: symbolWeights?.[0]?.slice(0, 5),
+                    firstReel: symbolReels?.[0]?.slice(0, 5)
+                });
+                
+                // 6. 使用選中表格進行符號抽選
+                return this.sampleSequencesWeighted(symbolWeights, symbolReels, this.rows);
+            }
+            
+            weightedRandomChoice(weights) {
+                // 加權隨機選擇函數
+                const totalWeight = weights.reduce((sum, w) => sum + w, 0);
+                const random = Math.random() * totalWeight;
+                
+                let accumulator = 0;
+                for (let i = 0; i < weights.length; i++) {
+                    accumulator += weights[i];
+                    if (random <= accumulator) {
+                        return i;
+                    }
+                }
+                return weights.length - 1; // 回退到最後一個
+            }
+
+            generateFreegameGrid() {
+                // 免費遊戲邏輯：完整的高低表抽選邏輯 (與simulation.py完全對齊)
+                
+                if (this.activeBuyFeatureMode) {
+                    // Buy Feature模式：根據預先分配的表序列決定使用高表還是低表
+                    console.log('🎰 [FreegameGrid] 使用Buy Feature模式');
+                    
+                    // 檢查是否有預先分配的表序列
+                    if (this.buyFeatureTableSchedule && this.currentBuyFeatureSpinIndex < this.buyFeatureTableSchedule.length) {
+                        const useHighTable = this.buyFeatureTableSchedule[this.currentBuyFeatureSpinIndex];
+                        const spinNumber = this.currentBuyFeatureSpinIndex + 1;
+                        
+                        console.log('🎰 [Buy Feature] 當前場次資訊:', {
+                            spinNumber: `第${spinNumber}場`,
+                            tableType: useHighTable ? '高表' : '低表',
+                            totalSpins: this.buyFeatureTableSchedule.length,
+                            schedule: this.buyFeatureTableSchedule.map((isHigh, i) => 
+                                `${i + 1}:${isHigh ? 'H' : 'L'}`).join(' ')
+                        });
+                        
+                        if (useHighTable) {
+                            // 使用高表邏輯 - 根據選中的符號模式決定使用哪種符號數據
+                            console.log('🎰 [Buy Feature] ✅ 使用高表生成符號');
+                            
+                            // 根據雙層抽選的結果決定符號數據
+                            const symbolData = this.getBuyFeatureSymbolData();
+                            
+                            // 記錄Buy Feature高表的符號數據，用於後續補充符號
+                            this.currentFreegameSymbolData = symbolData;
+                            // Buy Feature使用特殊的符號類型標記
+                            this.currentFreegameSymbolType = -1; // -1表示Buy Feature模式
+                            console.log('🎰 [Buy Feature] 記錄符號數據用於補充 (Buy Feature高表)');
+                            
+                            console.log('🎰 [Buy Feature] 選中的符號數據:', {
+                                symbolMode: this.buyFeatureSelectedSymbolMode?.symbolMode,
+                                rowIndex: this.buyFeatureSelectedSymbolMode?.rowIndex,
+                                hasWeights: !!symbolData.weights,
+                                hasReels: !!symbolData.reels
+                            });
+                            
+                            // 遞增spin索引
+                            this.currentBuyFeatureSpinIndex++;
+                            
+                            return this.sampleSequencesWeighted(symbolData.weights, symbolData.reels, this.rows);
+                        } else {
+                            // 使用低表邏輯
+                            console.log('🎰 [Buy Feature] ✅ 使用低表生成符號');
+                            
+                            // 使用免費遊戲的低表權重和符號
+                            const symbolData = {
+                                weights: this.freeGameLowSymbolWeight,
+                                reels: this.freeGameSymbolLow
+                            };
+                            
+                            if (!symbolData.weights || !symbolData.reels) {
+                                console.warn('🎰 [Buy Feature] 低表數據缺失，使用基礎遊戲低表');
+                                symbolData.weights = this.baseGameLowSymbolWeight;
+                                symbolData.reels = this.baseGameSymbolLow;
+                            }
+                            
+                            // 記錄Buy Feature低表的符號數據，用於後續補充符號
+                            this.currentFreegameSymbolData = symbolData;
+                            this.currentFreegameSymbolType = -2; // -2表示Buy Feature低表模式
+                            console.log('🎰 [Buy Feature] 記錄符號數據用於補充 (Buy Feature低表)');
+                            
+                            // 遞增spin索引
+                            this.currentBuyFeatureSpinIndex++;
+                            
+                            return this.sampleSequencesWeighted(symbolData.weights, symbolData.reels, this.rows);
+                        }
+                    } else {
+                        console.warn('🎰 [Buy Feature] 表序列數據缺失，回退到正常模式');
+                        // 回退到正常freegame邏輯
+                    }
+                }
+                
+                // 正常免費遊戲模式：實現完整的高低表抽選邏輯
+                console.log('🎰 [FreegameGrid] 使用正常免費遊戲模式');
+                
+                // 檢查是否需要初始化場次序列
+                if (!this.freegameSpinSequence || this.currentFreegameSpinIndex >= this.freegameSpinSequence.length) {
+                    console.log('🎰 [FreegameGrid] 初始化新的freegame場次序列');
+                    this.initializeFreegameSpinSequence();
+                }
+                
+                // 根據當前場次索引決定使用高表還是低表
+                const currentSpinType = this.freegameSpinSequence[this.currentFreegameSpinIndex];
+                const spinNumber = this.currentFreegameSpinIndex + 1;
+                const totalSpins = this.freegameSpinSequence.length;
+                
+                console.log('🎰 [FreegameGrid] 當前場次資訊:', {
+                    spinNumber: `第${spinNumber}場`,
+                    spinType: currentSpinType === 1 ? '高表' : '低表',
+                    totalSpins: totalSpins,
+                    config: this.freegameSelectedConfig,
+                    sequence: this.freegameSpinSequence.map((type, i) => 
+                        `${i + 1}:${type === 1 ? 'H' : 'L'}`).join(' ')
+                });
+                
+                // 遞增場次索引（為下次spin準備）
+                this.currentFreegameSpinIndex++;
+                
+                if (currentSpinType === 1) {
+                    // 高表場次：執行高表符號選擇邏輯
+                    console.log('🎰 [FreegameGrid] ✅ 當前場次使用高表');
+                    return this.generateFreegameHighTableGrid();
+                } else {
+                    // 低表場次：使用低表符號數據
+                    console.log('🎰 [FreegameGrid] ✅ 當前場次使用低表');
+                    return this.generateFreegameLowTableGrid();
+                }
+            }
+
+            // 初始化Freegame場次序列 (與simulation.py完全對齊)
+            initializeFreegameSpinSequence() {
+                console.log('🎰 [場次初始化] 開始初始化freegame場次序列');
+                
+                // 1. 選擇場次配置 (configs)
+                const highSurface = this.currentFreeGameHighSurface;
+                if (!highSurface) {
+                    throw new Error('currentFreeGameHighSurface 數據缺失，無法初始化場次序列');
+                }
+                
+                // 從高表配置中選擇配置
+                const { symbolType, config } = this.selectSymbolTypeAndConfig(highSurface);
+                console.log(`🎰 [場次初始化] 選中配置: config=${config}, symbolType=${symbolType}`);
+                
+                // 2. 根據配置索引獲取具體的高低表場次數量
+                if (config < 0 || config >= this.freegameConfigs.length) {
+                    console.warn(`🎰 [場次初始化] config索引${config}超出範圍，使用默認配置[3,7]`);
+                    this.freegameSelectedConfig = [3, 7];
+                } else {
+                    this.freegameSelectedConfig = this.freegameConfigs[config];
+                }
+                
+                const [highSpins, lowSpins] = this.freegameSelectedConfig;
+                console.log(`🎰 [場次初始化] 選中配置: ${highSpins}場高表 + ${lowSpins}場低表`);
+                
+                // 3. 生成場次序列並隨機排列 (與simulation.py的Fisher-Yates shuffle一致)
+                const totalSpins = highSpins + lowSpins;
+                this.freegameSpinSequence = [];
+                
+                // 填入高表標記 (1)
+                for (let i = 0; i < highSpins; i++) {
+                    this.freegameSpinSequence.push(1);
+                }
+                
+                // 填入低表標記 (0)
+                for (let i = 0; i < lowSpins; i++) {
+                    this.freegameSpinSequence.push(0);
+                }
+                
+                // Fisher-Yates shuffle (與simulation.py完全一致)
+                for (let i = this.freegameSpinSequence.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [this.freegameSpinSequence[i], this.freegameSpinSequence[j]] = 
+                    [this.freegameSpinSequence[j], this.freegameSpinSequence[i]];
+                }
+                
+                // 4. 重置場次索引
+                this.currentFreegameSpinIndex = 0;
+                
+                // 5. 記錄符號類型（用於高表場次）
+                this.currentFreegameSymbolType = symbolType;
+                
+                console.log('🎰 [場次初始化] ✅ 場次序列初始化完成:', {
+                    config: this.freegameSelectedConfig,
+                    totalSpins: totalSpins,
+                    sequence: this.freegameSpinSequence.map((type, i) => 
+                        `${i + 1}:${type === 1 ? 'H' : 'L'}`).join(' '),
+                    symbolType: symbolType,
+                    symbolTypeName: this.getDetailedSymbolTypeName(symbolType)
+                });
+            }
+
+            // 生成高表場次的符號網格
+            generateFreegameHighTableGrid() {
+                console.log('🎰 [高表場次] 開始生成高表符號網格');
+                
+                // 根據選擇的符號類型獲取對應的符號權重和內容
+                const symbolData = this.getFreegameSymbolData(this.currentFreegameSymbolType);
+                
+                // 記錄當前freegame的符號數據，用於後續補充符號
+                this.currentFreegameSymbolData = symbolData;
+                
+                console.log('🎰 [高表場次] 使用的符號數據:', {
+                    symbolType: this.currentFreegameSymbolType,
+                    symbolTypeName: this.getDetailedSymbolTypeName(this.currentFreegameSymbolType),
+                    hasWeights: !!symbolData.weights,
+                    hasReels: !!symbolData.reels,
+                    weightsLength: symbolData.weights?.length,
+                    reelsLength: symbolData.reels?.length
+                });
+                
+                // 使用真實的抽選邏輯
+                return this.sampleSequencesWeighted(symbolData.weights, symbolData.reels, this.rows);
+            }
+
+            // 生成低表場次的符號網格
+            generateFreegameLowTableGrid() {
+                console.log('🎰 [低表場次] 開始生成低表符號網格');
+                
+                // 使用免費遊戲的低表權重和符號
+                const symbolData = {
+                    weights: this.freeGameLowSymbolWeight,
+                    reels: this.freeGameSymbolLow
+                };
+                
+                if (!symbolData.weights || !symbolData.reels) {
+                    console.warn('🎰 [低表場次] freegame低表數據缺失，使用基礎遊戲低表');
+                    symbolData.weights = this.baseGameLowSymbolWeight;
+                    symbolData.reels = this.baseGameSymbolLow;
+                }
+                
+                // 記錄當前freegame的符號數據，用於後續補充符號
+                this.currentFreegameSymbolData = symbolData;
+                this.currentFreegameSymbolType = -10; // -10表示低表模式
+                
+                console.log('🎰 [低表場次] 使用的符號數據:', {
+                    symbolType: '低表',
+                    hasWeights: !!symbolData.weights,
+                    hasReels: !!symbolData.reels,
+                    weightsLength: symbolData.weights?.length,
+                    reelsLength: symbolData.reels?.length
+                });
+                
+                // 使用真實的抽選邏輯
+                return this.sampleSequencesWeighted(symbolData.weights, symbolData.reels, this.rows);
+            }
+
+            // 重置Freegame場次序列系統
+            resetFreegameSequence() {
+                console.log('🎰 [場次重置] 重置freegame場次序列系統');
+                this.freegameSpinSequence = null;
+                this.currentFreegameSpinIndex = 0;
+                this.freegameSelectedConfig = null;
+                this.currentFreegameSymbolType = null;
+                this.currentFreegameSymbolData = null;
+                console.log('🎰 [場次重置] ✅ 場次序列系統已重置');
+            }
+
+            selectSymbolTypeAndConfig(highSurface) {
+                console.log('🎯 [高表選擇] 開始高表抽選，輸入數據:', highSurface);
+                
+                // 检查是否为一维数组（YB版本的简化版本）
+                if (!Array.isArray(highSurface[0])) {
+                    console.log('🎯 [高表選擇] 檢測到一維數組 (YB版本)，長度:', highSurface.length);
+                    
+                    // 这是一维数组，使用YB版本的AKQJ混合选择逻辑
+                    if (highSurface.length === 4) {
+                        // 4个元素对应4种符号类型：A(1), K(2), Q(3), J(4)
+                        const totalWeight = highSurface.reduce((sum, val) => sum + val, 0);
+                        console.log('🎯 [高表選擇] YB版本AKQJ混合權重:', highSurface, '總權重:', totalWeight);
+                        
+                        if (totalWeight === 0) {
+                            console.log('🎯 [高表選擇] 總權重為0，使用預設A高表(symbolType=1)');
+                            return { symbolType: 1, config: 3 };
+                        }
+                        
+                        const random = Math.random() * totalWeight;
+                        console.log('🎯 [高表選擇] 隨機值:', random);
+                        
+                        let cumulative = 0;
+                        for (let i = 0; i < highSurface.length; i++) {
+                            cumulative += highSurface[i];
+                            const symbolType = i + 1; // A=1, K=2, Q=3, J=4
+                            const symbolName = ['A', 'K', 'Q', 'J'][i];
+                            console.log(`🎯 [高表選擇] 檢查${symbolName}高表(symbolType=${symbolType}): 權重=${highSurface[i]}, 累計=${cumulative}`);
+                            if (random <= cumulative) {
+                                console.log(`🎯 [高表選擇] ✅ YB版本選中${symbolName}高表(symbolType=${symbolType})!`);
+                                return { symbolType: symbolType, config: 3 }; // 使用預設config=3
+                            }
+                        }
+                        console.log('🎯 [高表選擇] 回退到A高表(symbolType=1)');
+                        return { symbolType: 1, config: 3 };
+                    } else {
+                        // 不是預期的格式，使用預設值
+                        console.log('🎯 [高表選擇] ⚠️ 不是預期的4張高表格式，使用預設A高表(symbolType=1)');
+                        return { symbolType: 1, config: 3 };
+                    }
+                }
+                
+                console.log('🎯 [高表選擇] 檢測到二維數組 (JL版本)');
+                
+                // JL版本的雙層抽選邏輯
+                // 第一層：決定使用「平均選擇」還是「專一選擇」
+                // 第二層：決定具體的場次配置
+                
+                console.log('🎯 [JL雙層抽選] 開始第一層抽選：平均 vs 專一');
+                
+                // 計算平均選擇 (symbolType=0) 的總權重
+                const averageWeight = highSurface[0].reduce((sum, val) => sum + val, 0);
+                
+                // 計算專一選擇 (symbolType=1,2,3,4) 的總權重
+                const exclusiveWeight = highSurface[1].reduce((sum, val) => sum + val, 0) +
+                                      highSurface[2].reduce((sum, val) => sum + val, 0) +
+                                      highSurface[3].reduce((sum, val) => sum + val, 0) +
+                                      highSurface[4].reduce((sum, val) => sum + val, 0);
+                
+                const firstLayerTotalWeight = averageWeight + exclusiveWeight;
+                console.log('🎯 [JL雙層抽選] 第一層權重:', {
+                    平均選擇: averageWeight,
+                    專一選擇: exclusiveWeight,
+                    總權重: firstLayerTotalWeight
+                });
+                
+                if (firstLayerTotalWeight === 0) {
+                    console.log('🎯 [JL雙層抽選] 第一層總權重為0，使用預設設定');
+                    return { symbolType: 0, config: 3 };
+                }
+                
+                const firstLayerRandom = Math.random() * firstLayerTotalWeight;
+                console.log('🎯 [JL雙層抽選] 第一層隨機值:', firstLayerRandom);
+                
+                let selectedCategory;
+                if (firstLayerRandom <= averageWeight) {
+                    selectedCategory = 'average';
+                    console.log('🎯 [JL雙層抽選] ✅ 第一層選中：平均選擇');
+                } else {
+                    selectedCategory = 'exclusive';
+                    console.log('🎯 [JL雙層抽選] ✅ 第一層選中：專一選擇');
+                }
+                
+                // 第二層抽選：根據第一層結果進行具體配置選擇
+                console.log('🎯 [JL雙層抽選] 開始第二層抽選：具體配置');
+                
+                if (selectedCategory === 'average') {
+                    // 平均選擇：在symbolType=0的11個配置中選擇
+                    const configs = highSurface[0];
+                    const configTotalWeight = configs.reduce((sum, val) => sum + val, 0);
+                    
+                    if (configTotalWeight === 0) {
+                        console.log('🎯 [JL雙層抽選] 平均選擇配置權重為0，使用預設config=3');
+                        return { symbolType: 0, config: 3 };
+                    }
+                    
+                    const configRandom = Math.random() * configTotalWeight;
+                    console.log('🎯 [JL雙層抽選] 平均選擇配置隨機值:', configRandom);
+                    
+                    let cumulative = 0;
+                    for (let config = 0; config < configs.length; config++) {
+                        cumulative += configs[config];
+                        if (configRandom <= cumulative) {
+                            console.log(`🎯 [JL雙層抽選] ✅ 第二層選中：平均選擇, config=${config}`);
+                            return { symbolType: 0, config };
+                        }
+                    }
+                    
+                    // 回退
+                    console.log('🎯 [JL雙層抽選] 平均選擇回退到config=3');
+                    return { symbolType: 0, config: 3 };
+                    
+                } else {
+                    // 專一選擇：在symbolType=1,2,3,4中選擇
+                    const exclusiveTypes = [1, 2, 3, 4];
+                    const exclusiveWeights = exclusiveTypes.map(type => 
+                        highSurface[type].reduce((sum, val) => sum + val, 0)
+                    );
+                    
+                    const exclusiveTypeTotalWeight = exclusiveWeights.reduce((sum, val) => sum + val, 0);
+                    
+                    if (exclusiveTypeTotalWeight === 0) {
+                        console.log('🎯 [JL雙層抽選] 專一選擇類型權重為0，使用預設symbolType=1, config=3');
+                        return { symbolType: 1, config: 3 };
+                    }
+                    
+                    const typeRandom = Math.random() * exclusiveTypeTotalWeight;
+                    console.log('🎯 [JL雙層抽選] 專一選擇類型隨機值:', typeRandom);
+                    
+                    // 選擇專一類型
+                    let typeCumulative = 0;
+                    let selectedSymbolType = 1;
+                    for (let i = 0; i < exclusiveTypes.length; i++) {
+                        typeCumulative += exclusiveWeights[i];
+                        if (typeRandom <= typeCumulative) {
+                            selectedSymbolType = exclusiveTypes[i];
+                            break;
+                        }
+                    }
+                    
+                    console.log(`🎯 [JL雙層抽選] ✅ 選中專一類型：symbolType=${selectedSymbolType}`);
+                    
+                    // 在選中的專一類型中選擇配置
+                    const selectedConfigs = highSurface[selectedSymbolType];
+                    const selectedConfigTotalWeight = selectedConfigs.reduce((sum, val) => sum + val, 0);
+                    
+                    if (selectedConfigTotalWeight === 0) {
+                        console.log(`🎯 [JL雙層抽選] 專一類型${selectedSymbolType}配置權重為0，使用預設config=3`);
+                        return { symbolType: selectedSymbolType, config: 3 };
+                    }
+                    
+                    const selectedConfigRandom = Math.random() * selectedConfigTotalWeight;
+                    console.log(`🎯 [JL雙層抽選] 專一類型${selectedSymbolType}配置隨機值:`, selectedConfigRandom);
+                    
+                    let configCumulative = 0;
+                    for (let config = 0; config < selectedConfigs.length; config++) {
+                        configCumulative += selectedConfigs[config];
+                        if (selectedConfigRandom <= configCumulative) {
+                            console.log(`🎯 [JL雙層抽選] ✅ 第二層選中：專一類型${selectedSymbolType}, config=${config}`);
+                            return { symbolType: selectedSymbolType, config };
+                        }
+                    }
+                    
+                    // 回退
+                    console.log(`🎯 [JL雙層抽選] 專一類型${selectedSymbolType}回退到config=3`);
+                    return { symbolType: selectedSymbolType, config: 3 };
+                }
+            }
+
+            getFreegameSymbolData(symbolType) {
+                // 根據符號類型返回對應的權重和符號內容
+                console.log(`📊 [符號數據] 獲取符號類型 ${symbolType} 的數據 (${this.gameMode}版本)`);
+                
+                switch (symbolType) {
+                    case -10: // 低表場次
+                        console.log('📊 [符號數據] 使用 case -10: 免費遊戲低表 (freeGameSymbolLow)');
+                        if (!this.freeGameLowSymbolWeight || !this.freeGameSymbolLow) {
+                            throw new Error('freeGameLowSymbolWeight 或 freeGameSymbolLow 數據缺失');
+                        }
+                        return {
+                            weights: this.freeGameLowSymbolWeight,
+                            reels: this.freeGameSymbolLow
+                        };
+                    case 0: // 平均選擇 [1,1,1,1] - 主要用於JL版本
+                        console.log('📊 [符號數據] 使用 case 0: 平均選擇高表 (freeGameSymbolHigh)');
+                        if (this.gameMode === 'yb') {
+                            console.warn('📊 [符號數據] ⚠️ YB版本不應使用symbolType=0，回退到A高表');
+                            if (!this.freeGameHighSymbolWeight || !this.freeGameSymbolHighA) {
+                                throw new Error('YB版本回退：freeGameHighSymbolWeight 或 freeGameSymbolHighA 數據缺失');
+                            }
+                            return {
+                                weights: this.freeGameHighSymbolWeight,
+                                reels: this.freeGameSymbolHighA
+                            };
+                        }
+                        if (!this.freeGameHighSymbolWeight || !this.freeGameSymbolHigh) {
+                            throw new Error('freeGameHighSymbolWeight 或 freeGameSymbolHigh 數據缺失');
+                        }
+                        return {
+                            weights: this.freeGameHighSymbolWeight,
+                            reels: this.freeGameSymbolHigh
+                        };
+                    case 1: // 第一張專一表
+                        if (this.gameMode === 'jl') {
+                            console.log('📊 [符號數據] 使用 case 1: JL版A高表 (freeGameSymbolHighA)');
+                            if (!this.freeGameHighSymbolWeight || !this.freeGameSymbolHighA) {
+                                console.warn('📊 [符號數據] freeGameSymbolHighA 數據缺失，回退使用 freeGameSymbolHigh');
+                                return {
+                                    weights: this.freeGameHighSymbolWeight,
+                                    reels: this.freeGameSymbolHigh || this.freeGameSymbolHighA // 額外回退
+                                };
+                            }
+                            return {
+                                weights: this.freeGameHighSymbolWeight,
+                                reels: this.freeGameSymbolHighA
+                            };
+                        } else {
+                            console.log('📊 [符號數據] 使用 case 1: YB版純A高表 (freeGameSymbolHighA)');
+                            if (!this.freeGameHighSymbolWeight || !this.freeGameSymbolHighA) {
+                                throw new Error('YB版本：freeGameHighSymbolWeight 或 freeGameSymbolHighA 數據缺失');
+                            }
+                            return {
+                                weights: this.freeGameHighSymbolWeight,
+                                reels: this.freeGameSymbolHighA
+                            };
+                        }
+                    case 2: // 第二張專一表
+                        if (this.gameMode === 'jl') {
+                            console.log('📊 [符號數據] 使用 case 2: JL版K高表 (freeGameSymbolHighK)');
+                            if (!this.freeGameHighSymbolWeight || !this.freeGameSymbolHighK) {
+                                console.warn('📊 [符號數據] freeGameSymbolHighK 數據缺失，回退使用 freeGameSymbolHigh');
+                                return {
+                                    weights: this.freeGameHighSymbolWeight,
+                                    reels: this.freeGameSymbolHigh
+                                };
+                            }
+                            return {
+                                weights: this.freeGameHighSymbolWeight,
+                                reels: this.freeGameSymbolHighK
+                            };
+                        } else {
+                            console.log('📊 [符號數據] 使用 case 2: YB版純K高表 (freeGameSymbolHighK)');
+                            if (!this.freeGameHighSymbolWeight || !this.freeGameSymbolHighK) {
+                                throw new Error('freeGameHighSymbolWeight 或 freeGameSymbolHighK 數據缺失');
+                            }
+                            return {
+                                weights: this.freeGameHighSymbolWeight,
+                                reels: this.freeGameSymbolHighK
+                            };
+                        }
+                    case 3: // 第三張專一表
+                        if (this.gameMode === 'jl') {
+                            console.log('📊 [符號數據] 使用 case 3: JL版Q高表 (freeGameSymbolHighQ)');
+                            if (!this.freeGameHighSymbolWeight || !this.freeGameSymbolHighQ) {
+                                console.warn('📊 [符號數據] freeGameSymbolHighQ 數據缺失，回退使用 freeGameSymbolHigh');
+                                return {
+                                    weights: this.freeGameHighSymbolWeight,
+                                    reels: this.freeGameSymbolHigh
+                                };
+                            }
+                            return {
+                                weights: this.freeGameHighSymbolWeight,
+                                reels: this.freeGameSymbolHighQ
+                            };
+                        } else {
+                            console.log('📊 [符號數據] 使用 case 3: YB版純Q高表 (freeGameSymbolHighQ)');
+                            if (!this.freeGameHighSymbolWeight || !this.freeGameSymbolHighQ) {
+                                throw new Error('freeGameHighSymbolWeight 或 freeGameSymbolHighQ 數據缺失');
+                            }
+                            return {
+                                weights: this.freeGameHighSymbolWeight,
+                                reels: this.freeGameSymbolHighQ
+                            };
+                        }
+                    case 4: // 第四張專一表
+                        if (this.gameMode === 'jl') {
+                            console.log('📊 [符號數據] 使用 case 4: JL版J高表 (freeGameSymbolHighJ)');
+                            if (!this.freeGameHighSymbolWeight || !this.freeGameSymbolHighJ) {
+                                console.warn('📊 [符號數據] freeGameSymbolHighJ 數據缺失，回退使用 freeGameSymbolHigh');
+                                return {
+                                    weights: this.freeGameHighSymbolWeight,
+                                    reels: this.freeGameSymbolHigh
+                                };
+                            }
+                            return {
+                                weights: this.freeGameHighSymbolWeight,
+                                reels: this.freeGameSymbolHighJ
+                            };
+                        } else {
+                            console.log('📊 [符號數據] 使用 case 4: YB版純J高表 (freeGameSymbolHighJ)');
+                            if (!this.freeGameHighSymbolWeight || !this.freeGameSymbolHighJ) {
+                                throw new Error('freeGameHighSymbolWeight 或 freeGameSymbolHighJ 數據缺失');
+                            }
+                            return {
+                                weights: this.freeGameHighSymbolWeight,
+                                reels: this.freeGameSymbolHighJ
+                            };
+                        }
+                    default:
+                        console.error(`📊 [符號數據] ❌ 無效的符號類型: ${symbolType}`);
+                        throw new Error('無效的符號類型: ' + symbolType + '，無法使用回退數據');
+                }
+            }
+
+            getSymbolTypeName(symbolType) {
+                // 獲取符號類型的描述名稱
+                switch (symbolType) {
+                    case -10: return '免費遊戲低表';
+                    case -2: return 'Buy Feature低表';
+                    case -1: return 'Buy Feature高表';
+                    case 0: 
+                        if (this.gameMode === 'yb') {
+                            return 'AKQJ混合';
+                        } else {
+                            return '平均選擇';
+                        }
+                    case 1: 
+                        return this.gameMode === 'jl' ? '純A高表' : '純A高表';
+                    case 2: 
+                        return this.gameMode === 'jl' ? '純K高表' : '純K高表';
+                    case 3: 
+                        return this.gameMode === 'jl' ? '純Q高表' : '純Q高表';
+                    case 4: 
+                        return this.gameMode === 'jl' ? '純J高表' : '純J高表';
+                    default: return `未知類型${symbolType}`;
+                }
+            }
+            
+            getDetailedSymbolTypeName(symbolType) {
+                // 獲取詳細的符號類型描述，包括具體抽到的高表
+                if (symbolType === -10) {
+                    return '低表場次';
+                } else if (symbolType === -1) {
+                    return 'Buy Feature高表';
+                } else if (symbolType === -2) {
+                    return 'Buy Feature低表';
+                } else if (this.gameMode === 'yb' && symbolType >= 1 && symbolType <= 4) {
+                    // YB版本：symbolType 1=A, 2=K, 3=Q, 4=J
+                    const baseNames = ['A', 'K', 'Q', 'J'];
+                    const baseName = baseNames[symbolType - 1]; // 減1因為symbolType從1開始
+                    return `AKQJ混合 (抽到${baseName}高表)`;
+                }
+                return this.getSymbolTypeName(symbolType);
+            }
+
+            mapIndexToSymbol(index) {
+                // Map weight matrix index to actual symbol
+                // This mapping matches the order used in simulation.py
+                const symbolMapping = [
+                    'WILD',   // 0
+                    'WILD2',  // 1
+                    'C1',     // 2
+                    'M1', 'M2', 'M3', 'M4',  // 3-6
+                    'A', 'K', 'Q', 'J',      // 7-10
+                    'M1_G', 'M2_G', 'M3_G', 'M4_G',  // 11-14
+                    'A_G', 'K_G', 'Q_G', 'J_G'       // 15-18
+                ];
+                
+                // 處理無效輸入
+                if (index === undefined || index === null || isNaN(index)) {
+                    console.warn('mapIndexToSymbol received invalid index:', index, 'type:', typeof index);
+                    return 'error'; // 回退到錯誤符號
+                }
+                
+                // 確保index是整數
+                const numIndex = Math.round(Number(index));
+                
+                // 處理特殊的error符號索引
+                if (numIndex === -1) {
+                    return 'error';
+                }
+                
+                if (numIndex >= 0 && numIndex < symbolMapping.length) {
+                    return symbolMapping[numIndex];
+                }
+                
+                console.warn('mapIndexToSymbol received out-of-range index:', numIndex, 'original:', index);
+                // If index exceeds mapping, use fallback
+                return 'error'; // Default fallback symbol
+            }
+
+            bindEvents() {
+                // Mode selector
+                document.getElementById('game-mode').addEventListener('change', (e) => {
+                    this.gameMode = e.target.value;
+                    this.setupModeParameters();
+                    this.updateGameStateDisplay();
+                    console.log(`切換到 ${this.gameMode === 'yb' ? 'YB版本' : 'JL版本'}`);
+                });
+
+                document.getElementById('spin-btn').addEventListener('click', () => this.spin());
+                document.getElementById('bet-plus').addEventListener('click', () => this.adjustBet(50));
+                document.getElementById('bet-minus').addEventListener('click', () => this.adjustBet(-50));
+                document.getElementById('auto-btn').addEventListener('click', () => this.toggleAutoSpin());
+                
+                // Buy feature button
+                document.getElementById('buy-feature-btn').addEventListener('click', () => {
+                    this.buyFreegame();
+                });
+                
+                // Add money button
+                document.getElementById('add-money-btn').addEventListener('click', () => {
+                    this.addMoney();
+                });
+                
+                // Add keyboard event listener for spacebar
+                document.addEventListener('keydown', (event) => {
+                    if (event.code === 'Space') {
+                        event.preventDefault(); // Prevent page scroll
+                        if (!this.isAutoSpin) {
+                            this.spin();
+                        }
+                    }
+                });
+                
+                // Initialize display
+                this.updateGameStateDisplay();
+            }
+
+            updateGameStateDisplay() {
+                document.getElementById('current-mode-display').textContent = 
+                    this.gameMode === 'yb' ? 'YB版本' : 'JL版本';
+                document.getElementById('game-phase-display').textContent = 
+                    this.gamePhase === 'basegame' ? '基礎遊戲' : `免費遊戲 (${this.freeGameSpinsRemaining}局)`;
+                document.getElementById('c1-count-display').textContent = this.c1Count;
+                
+                // Update buy feature button
+                const buyBtn = document.getElementById('buy-feature-btn');
+                if (buyBtn) {
+                    const canBuyFeature = this.gamePhase === 'basegame' && 
+                                        this.balance >= this.buyFeatureCost; // 使用固定金額
+                    buyBtn.disabled = !canBuyFeature;
+                }
+            }
+
+            adjustBet(amount) {
+                if (this.isSpinning || this.isAutoSpin) return;
+                
+                this.currentBet = Math.max(50, Math.min(this.balance, this.currentBet + amount));
+                this.updateDisplay();
+            }
+
+            addMoney() {
+                this.balance += 10000;
+                this.updateDisplay();
+                console.log('補充金錢 +10000，當前餘額:', this.balance);
+                
+                // 顯示補充金錢的提示
+                const resultContent = document.getElementById('result-content');
+                const tempMessage = document.createElement('div');
+                tempMessage.style.cssText = 'color: #27ae60; font-weight: bold; margin-top: 10px;';
+                tempMessage.textContent = '💰 補充金錢 +10,000！';
+                resultContent.appendChild(tempMessage);
+                
+                // 3秒後移除提示
+                setTimeout(() => {
+                    if (tempMessage.parentNode) {
+                        tempMessage.parentNode.removeChild(tempMessage);
+                    }
+                }, 3000);
+            }
+
+            async spin() {
+                if (this.isSpinning) return;
+                
+                // 免費遊戲期間不收費，基礎遊戲才檢查餘額並扣費
+                if (this.gamePhase === 'basegame' && this.balance < this.currentBet) return;
+
+                this.isSpinning = true;
+                
+                // 重置當前旋轉的獲勝金額
+                this.lastSpinWin = 0;
+                
+                // 重置C1計數（每次旋轉重新計算，不累積）
+                if (this.gamePhase === 'basegame') {
+                    this.c1Count = 0;
+                }
+                
+                // 只有基礎遊戲才扣費
+                if (this.gamePhase === 'basegame') {
+                    this.balance -= this.currentBet;
+                }
+                
+                this.resetMultiplier();
+                this.resetRandomwildState();
+                this.updateDisplay();
+
+                this.updateButtonStates();
+                document.getElementById('result-content').innerHTML = '旋轉中...';
+
+                // 使用simulation.py的真實邏輯生成網格
+                try {
+                    const symbolGrid = this.generateGrid();
+                    console.log('Raw symbolGrid from generateGrid:', symbolGrid);
+                    
+                    this.currentGrid = [];
+                    
+                    // 轉換數字索引為符號名稱
+                    for (let reel = 0; reel < this.reels; reel++) {
+                        this.currentGrid[reel] = [];
+                        for (let row = 0; row < this.rows; row++) {
+                            const symbolIndex = symbolGrid[reel][row];
+                            console.log(`Converting reel ${reel}, row ${row}: index ${symbolIndex}`);
+                            const symbolName = this.mapIndexToSymbol(symbolIndex);
+                            console.log(`Mapped to symbol: ${symbolName}`);
+                            this.currentGrid[reel][row] = symbolName;
+                        }
+                    }
+                    
+                    console.log('Final generated grid:', this.currentGrid);
+                } catch (error) {
+                    console.error('Grid generation failed, using fallback:', error);
+                    // 回退到原始隨機生成
+                    this.currentGrid = [];
+                    for (let reel = 0; reel < this.reels; reel++) {
+                        this.currentGrid[reel] = [];
+                        for (let row = 0; row < this.rows; row++) {
+                            this.currentGrid[reel][row] = this.getRandomSymbol();
+                        }
+                    }
+                }
+
+                // Initialize randomwild state (will be processed after reel animation)
+                this.randomwildTriggered = false;
+                this.randomwildUsed = false;
+                this.goldenSymbolsConvertedThisRound = 0;
+
+                // Store original grid for Hold & Spin check
+                this.originalGrid = this.currentGrid.map(reel => [...reel]);
+
+                // Start spinning animation
+                await this.animateReels();
+
+                // 在cascading wins之前進行randomwild抽選
+                this.applyRandomwild();
+
+                // Process cascading wins (randomwild will be checked during this process)
+                await this.processCascadingWins();
+
+                // Check for C1 scatter symbols and freegame trigger
+                this.checkC1ScatterAndFreegame();
+
+                this.isSpinning = false;
+                this.updateButtonStates();
+                this.updateGameStateDisplay();
+                
+                // Continue auto spin if enabled
+                if (this.isAutoSpin) {
+                    this.scheduleNextAutoSpin();
+                }
+            }
+
+            checkC1ScatterAndFreegame() {
+                // Count C1 symbols in current grid
+                let currentC1Count = 0;
+                for (let reel = 0; reel < this.reels; reel++) {
+                    for (let row = 0; row < this.rows; row++) {
+                        if (this.currentGrid[reel][row] === 'C1') {
+                            currentC1Count++;
+                        }
+                    }
+                }
+
+                if (this.gamePhase === 'basegame') {
+                    // In base game, use current C1 count (not accumulate)
+                    this.c1Count = currentC1Count;
+                    
+                    if (this.c1Count >= 3) {
+                        // Trigger freegame
+                        this.triggerFreegame();
+                    }
+                } else if (this.gamePhase === 'freegame') {
+                    // In freegame, C1s can retrigger more spins
+                    if (currentC1Count >= 3) {
+                        const additionalSpins = this.calculateRetriggerSpins(currentC1Count);
+                        this.freeGameSpinsRemaining += additionalSpins;
+                        console.log(`Freegame retrigger! +${additionalSpins} spins`);
+                    }
+                    
+                    // Decrease remaining spins
+                    this.freeGameSpinsRemaining--;
+                    
+                    if (this.freeGameSpinsRemaining <= 0) {
+                        this.endFreegame();
+                    }
+                }
+            }
+
+            triggerFreegame() {
+                console.log('🎰 [免費遊戲] 免費遊戲觸發! 當前畫面C1數量:', this.c1Count);
+                
+                // 取得當前這次旋轉的獲勝金額 (如果有的話)
+                const currentSpinWin = this.lastSpinWin || 0; // 需要先設置這個變數
+                
+                this.gamePhase = 'freegame';
+                this.freeGameSpinsRemaining = 10; // Standard 10 free spins
+                this.c1Count = 0; // Reset for next base game session
+                
+                // 清理basegame記錄數據
+                this.currentBasegameTableInfo = null;
+                this.currentBasegameSymbolData = null;
+                console.log('🎲 [基礎遊戲] 已清理basegame表記錄');
+                
+                // 重置freegame場次序列系統
+                this.resetFreegameSequence();
+                
+                // 初始化免費遊戲總獲勝分數，包含觸發時的獲勝
+                this.freeGameTotalWin = currentSpinWin;
+                
+                // 設置免費遊戲的 surface 數據
+                this.currentFreeGameHighSurface = this.gameMode === 'yb' ? 
+                    this.currentFreeGameSurface : this.freeGameSurface?.[3];
+                console.log('🎰 [免費遊戲] 設置免費遊戲高表配置:', this.currentFreeGameHighSurface);
+                console.log('🎰 [免費遊戲] 遊戲模式:', this.gameMode);
+                console.log('🎰 [免費遊戲] 免費遊戲局數:', this.freeGameSpinsRemaining);
+                
+                // Update multiplier display for free game mode
+                this.updateMultiplierDisplay();
+                
+                // No need to manually switch weights - freegame uses different data.js arrays
+                // The generateFreegameGrid() function will use freeGameHighSymbolWeight and freeGameSymbolHigh arrays
+                console.log('🎰 [免費遊戲] 切換到免費遊戲階段 - 將使用免費遊戲data.js陣列');
+                
+                // Display freegame start message
+                const resultContent = document.getElementById('result-content');
+                resultContent.innerHTML += '<div style="color: #ffd700; font-size: 1.3em; margin-top: 15px; animation: bigWinGlow 1s infinite;">🎰 免費遊戲開始！10局免費旋轉 🎰</div>';
+            }
+
+            calculateRetriggerSpins(c1Count) {
+                // More C1s = more additional spins
+                if (c1Count >= 5) return 15;
+                if (c1Count >= 4) return 10;
+                return 5; // 3 C1s
+            }
+
+            endFreegame() {
+                console.log('Freegame ended');
+                this.gamePhase = 'basegame';
+                this.freeGameSpinsRemaining = 0;
+                
+                // 清理免費遊戲相關變數
+                this.currentFreeGameHighSurface = null;
+                
+                // 重置freegame場次序列系統
+                this.resetFreegameSequence();
+                
+                // 準備回到basegame，清理任何可能的basegame記錄
+                this.currentBasegameTableInfo = null;
+                this.currentBasegameSymbolData = null;
+                console.log('🎲 [基礎遊戲] 已準備回到basegame模式');
+                
+                // Update multiplier display back to base game mode
+                this.updateMultiplierDisplay();
+                
+                // 清理Buy Feature模式相關變數
+                if (this.activeBuyFeatureMode) {
+                    this.activeBuyFeatureMode = false;
+                    this.buyFeatureFreegameHighSurface = null;
+                    this.buyFeatureTableSchedule = null; // 清理表序列
+                    this.currentBuyFeatureSpinIndex = 0; // 重置spin索引
+                    this.buyFeatureSelectedSymbolMode = null; // 清理符號模式
+                    console.log('🎰 [Buy Feature] Buy Feature模式已清理，表序列和符號模式已重置');
+                }
+                
+                // Display freegame end message with total win
+                const resultContent = document.getElementById('result-content');
+                const isBigWin = this.freeGameTotalWin >= 5000; // 定義大獎門檻
+                const winClass = isBigWin ? 'big-win' : '';
+                const winAnimation = isBigWin ? 'animation: bigWinGlow 2s infinite;' : '';
+                
+                if (this.isBuyFeatureActive) {
+                    resultContent.innerHTML += `<div style="color: #e74c3c; font-size: 1.2em; margin-top: 15px;">💎 Buy Feature免費遊戲結束，回到基礎遊戲 💎</div>`;
+                    this.isBuyFeatureActive = false; // 重置Buy Feature狀態
+                } else {
+                    resultContent.innerHTML += `<div style="color: #e74c3c; font-size: 1.2em; margin-top: 15px;">免費遊戲結束，回到基礎遊戲</div>`;
+                }
+                
+                // 顯示免費遊戲總獲勝金額
+                resultContent.innerHTML += `<div class="${winClass}" style="color: #ffd700; font-size: 1.5em; font-weight: bold; margin-top: 10px; ${winAnimation}">🎰 免費遊戲總獲勝: ${this.freeGameTotalWin.toLocaleString()} 🎰</div>`;
+                
+                // 重置免費遊戲總分
+                this.freeGameTotalWin = 0;
+                
+                // 重新設定基礎遊戲參數
+                this.setupModeParameters();
+                this.updateButtonStates();
+            }
+
+            buyFreegame() {
+                if (this.gamePhase !== 'basegame') {
+                    console.log('只能在基礎遊戲中購買特色');
+                    return;
+                }
+                
+                const cost = this.buyFeatureCost * this.currentBet; // 使用倍數計算：40.5倍押注
+                if (this.balance < cost) {
+                    console.log('餘額不足，無法購買特色');
+                    return;
+                }
+                
+                // 扣除費用
+                this.balance -= cost;
+                this.isBuyFeatureActive = true;
+                
+                console.log(`購買特色成功！花費: ${cost} (${this.buyFeatureCost}倍押注)`);
+                const resultContent = document.getElementById('result-content');
+                resultContent.innerHTML = '<div style="color: #9b59b6; font-size: 1.3em; animation: bigWinGlow 1s infinite;">💎 購買特色！產生全C1畫面... 💎</div>';
+                
+                this.updateDisplay();
+                
+                // 執行Buy Feature流程
+                this.executeBuyFeature();
+            }
+
+            async executeBuyFeature() {
+                try {
+                    // Step 1: 產生全部都是C1的畫面
+                    this.generateAllC1Grid();
+                    
+                    // 顯示全C1畫面
+                    this.updateButtonStates();
+                    await this.animateReels();
+                    
+                    // 顯示全C1結果
+                    const resultContent = document.getElementById('result-content');
+                    resultContent.innerHTML = '<div style="color: #ffd700; font-size: 1.3em; margin-bottom: 10px;">🎰 全畫面C1！觸發Buy Feature免費遊戲！ 🎰</div>';
+                    
+                    // 等待玩家看到結果 (縮短等待時間)
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                    // Step 2: 進入免費遊戲模式
+                    this.gamePhase = 'freegame';
+                    this.freeGameSpinsRemaining = 10; // 預設10局免費遊戲
+                    this.c1Count = 0; // 重置C1計數
+                    this.isBuyFeatureActive = false;
+                    
+                    // 初始化免費遊戲總獲勝分數 (Buy Feature沒有觸發獎勝，從0開始)
+                    this.freeGameTotalWin = 0;
+                    
+                    // 設置免費遊戲的 surface 數據 - 統一使用currentFreeGameSurface
+                    this.currentFreeGameHighSurface = this.gameMode === 'yb' ? 
+                        this.currentFreeGameSurface : this.freeGameSurface?.[3];
+                    
+                    // 設定Buy Feature專用的免費遊戲參數
+                    this.setupBuyFeatureFreegameParameters();
+                    
+                    // 顯示免費遊戲開始
+                    resultContent.innerHTML += '<div style="color: #ffd700; font-size: 1.2em; margin-top: 15px;">🌟 Buy Feature免費遊戲開始！🌟</div>';
+                    
+                    this.updateGameStateDisplay();
+                    this.updateButtonStates();
+                    
+                } catch (error) {
+                    console.error('Buy Feature執行失敗:', error);
+                    this.isBuyFeatureActive = false;
+                    this.updateButtonStates();
+                }
+            }
+
+            generateAllC1Grid() {
+                // 產生5x4全部都是C1的畫面
+                this.currentGrid = [];
+                for (let reel = 0; reel < this.reels; reel++) {
+                    this.currentGrid[reel] = [];
+                    for (let row = 0; row < this.rows; row++) {
+                        this.currentGrid[reel][row] = 'C1';
+                    }
+                }
+                console.log('產生全C1畫面:', this.currentGrid);
+            }
+
+            setupBuyFeatureFreegameParameters() {
+                // 根據模式設定Buy Feature的免費遊戲參數
+                if (this.gameMode === 'yb') {
+                    // YB版本的Buy Feature設定
+                    // 第1行：AKQJ四種符號隨機抽選的高低表場次分配權重
+                    // 第2-5行：純A、純K、純Q、純J符號的場次分配（目前權重為0）
+                    this.buyFeatureFreegameHighSurface = [
+                        [0., 0., 0., 0., 11., 79., 10., 0., 0., 0., 0.], // AKQJ混合模式
+                        [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],    // 純A模式（未開放）
+                        [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],    // 純K模式（未開放）
+                        [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],    // 純Q模式（未開放）
+                        [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]     // 純J模式（未開放）
+                    ];
+                    console.log('✅ 設定YB版本Buy Feature免費遊戲參數（5x11矩陣）');
+                } else {
+                    // JL版本的Buy Feature設定
+                    if (this.buyjl) {
+                        // 使用buyjl參數：第一行全0，後面4行是buyjl重塑的4x11矩陣
+                        this.buyFeatureFreegameHighSurface = [
+                            new Array(11).fill(0),
+                            ...this.reshapeArray(this.buyjl, 4, 11)
+                        ];
+                        console.log('✅ 設定JL版本Buy Feature免費遊戲參數（使用buyjl）');
+                    } else {
+                        // 回退設定
+                        this.buyFeatureFreegameHighSurface = [
+                            [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                            [0., 0., 0., 0., 5., 25., 5., 0., 0., 0., 0.],
+                            [0., 0., 0., 0., 5., 25., 5., 0., 0., 0., 0.],
+                            [0., 0., 0., 0., 5., 25., 5., 0., 0., 0., 0.],
+                            [0., 0., 0., 0., 5., 25., 5., 0., 0., 0., 0.]
+                        ];
+                        console.log('✅ 設定JL版本Buy Feature免費遊戲參數（回退設定）');
+                    }
+                }
+                
+                // 進行雙層抽選：第一層選擇符號模式，第二層選擇高低表分配
+                this.generateBuyFeatureTableScheduleFromMatrix();
+                
+                // 在免費遊戲中會使用這些參數來生成符號
+                this.activeBuyFeatureMode = true;
+            }
+
+            generateBuyFeatureTableScheduleFromMatrix() {
+                // 雙層抽選機制：第一層選擇符號模式，第二層選擇高低表分配
+                console.log('🎰 [Buy Feature] 開始雙層抽選機制');
+                console.log('🎰 [Buy Feature] 輸入矩陣:', this.buyFeatureFreegameHighSurface);
+                
+                // === 第一層抽選：選擇符號模式 ===
+                // 計算每一行的總權重，決定使用哪一行
+                const rowWeights = this.buyFeatureFreegameHighSurface.map(row => 
+                    row.reduce((sum, val) => sum + val, 0)
+                );
+                
+                console.log('🎯 [第一層抽選] 各行總權重:', {
+                    '第1行(AKQJ混合)': rowWeights[0],
+                    '第2行(純A)': rowWeights[1], 
+                    '第3行(純K)': rowWeights[2],
+                    '第4行(純Q)': rowWeights[3],
+                    '第5行(純J)': rowWeights[4]
+                });
+                
+                // 根據行權重選擇符號模式
+                const selectedRowIndex = this.weightedRandomChoice(rowWeights);
+                const symbolModeNames = ['AKQJ混合', '純A', '純K', '純Q', '純J'];
+                const selectedSymbolMode = symbolModeNames[selectedRowIndex];
+                
+                console.log('🎯 [第一層抽選] ✅ 選中符號模式:', {
+                    rowIndex: selectedRowIndex,
+                    symbolMode: selectedSymbolMode,
+                    rowWeight: rowWeights[selectedRowIndex]
+                });
+                
+                // 儲存選中的符號模式，供後續使用
+                this.buyFeatureSelectedSymbolMode = {
+                    rowIndex: selectedRowIndex,
+                    symbolMode: selectedSymbolMode
+                };
+                
+                // === 第二層抽選：在選中行內選擇高低表分配 ===
+                const selectedRow = this.buyFeatureFreegameHighSurface[selectedRowIndex];
+                
+                console.log('🎯 [第二層抽選] 選中行的權重分配:', selectedRow);
+                console.log('🎯 [第二層抽選] 權重說明:', {
+                    '索引0': '0場高表/10場低表',
+                    '索引1': '1場高表/9場低表',
+                    '索引2': '2場高表/8場低表', 
+                    '索引3': '3場高表/7場低表',
+                    '索引4': '4場高表/6場低表',
+                    '索引5': '5場高表/5場低表',
+                    '索引6': '6場高表/4場低表',
+                    '索引7': '7場高表/3場低表',
+                    '索引8': '8場高表/2場低表',
+                    '索引9': '9場高表/1場低表',
+                    '索引10': '10場高表/0場低表'
+                });
+                
+                // 根據選中行的權重分配選擇高低表場次
+                const selectedTableDistributionIndex = this.weightedRandomChoice(selectedRow);
+                const highTableSpins = selectedTableDistributionIndex;
+                const lowTableSpins = 10 - highTableSpins;
+                
+                console.log('� [第二層抽選] ✅ 高低表分配結果:', {
+                    distributionIndex: selectedTableDistributionIndex,
+                    highTableSpins: `${highTableSpins}場高表`,
+                    lowTableSpins: `${lowTableSpins}場低表`,
+                    weight: selectedRow[selectedTableDistributionIndex],
+                    finalDistribution: `${highTableSpins}高/${lowTableSpins}低`
+                });
+                
+                // 生成10場免費遊戲的表類型序列 (true=高表, false=低表)
+                const tableSchedule = [];
+                
+                // 先添加指定數量的高表
+                for (let i = 0; i < highTableSpins; i++) {
+                    tableSchedule.push(true);
+                }
+                
+                // 再添加剩餘的低表
+                for (let i = 0; i < lowTableSpins; i++) {
+                    tableSchedule.push(false);
+                }
+                
+                // 隨機打亂順序，模擬真實遊戲中的隨機分佈
+                this.shuffleArray(tableSchedule);
+                
+                // 儲存表序列和符號模式供免費遊戲使用
+                this.buyFeatureTableSchedule = tableSchedule;
+                this.currentBuyFeatureSpinIndex = 0;
+                
+                console.log('🎰 [Buy Feature] 🎯 雙層抽選完成總結:', {
+                    symbolMode: selectedSymbolMode,
+                    tableDistribution: `${highTableSpins}高/${lowTableSpins}低`,
+                    schedule: tableSchedule.map((isHigh, index) => 
+                        `第${index + 1}場: ${isHigh ? 'H' : 'L'}`).join(' ')
+                });
+                
+                return {
+                    symbolMode: this.buyFeatureSelectedSymbolMode,
+                    tableSchedule: tableSchedule
+                };
+            }
+
+            getBuyFeatureSymbolData() {
+                // 根據雙層抽選的結果決定使用哪種符號數據
+                if (!this.buyFeatureSelectedSymbolMode) {
+                    console.warn('🎰 [Buy Feature] 符號模式未選擇，使用預設AKQJ混合模式');
+                    if (this.gameMode === 'yb') {
+                        // YB版本：随机选择A/K/Q/J中的一种
+                        const randomSymbolType = Math.floor(Math.random() * 4) + 1;
+                        return this.getFreegameSymbolData(randomSymbolType);
+                    } else {
+                        return this.getFreegameSymbolData(0); // JL版本使用平均選擇
+                    }
+                }
+                
+                const { rowIndex, symbolMode } = this.buyFeatureSelectedSymbolMode;
+                
+                console.log(`🎰 [Buy Feature] 根據符號模式 "${symbolMode}" (行${rowIndex}) 選擇符號數據`);
+                
+                switch (rowIndex) {
+                    case 0: // 第1行：AKQJ混合模式
+                        console.log('🎰 [Buy Feature] 使用AKQJ混合高表');
+                        if (this.gameMode === 'yb') {
+                            // YB版本：AKQJ混合模式需要随机选择A/K/Q/J中的一种
+                            console.log('🎰 [Buy Feature] YB版本AKQJ混合：随机选择A/K/Q/J高表');
+                            const randomSymbolType = Math.floor(Math.random() * 4) + 1; // 1,2,3,4
+                            return this.getFreegameSymbolData(randomSymbolType);
+                        } else {
+                            // JL版本：使用通用高表
+                            console.log('🎰 [Buy Feature] JL版本：使用freeGameSymbolHigh');
+                            if (!this.freeGameHighSymbolWeight || !this.freeGameSymbolHigh) {
+                                throw new Error('JL版本AKQJ混合模式數據缺失: freeGameHighSymbolWeight 或 freeGameSymbolHigh');
+                            }
+                            return {
+                                weights: this.freeGameHighSymbolWeight,
+                                reels: this.freeGameSymbolHigh
+                            };
+                        }
+                        
+                    case 1: // 第2行：純A模式
+                        console.log('🎰 [Buy Feature] 使用純A高表 (freeGameSymbolHighA)');
+                        if (!this.freeGameHighSymbolWeight || !this.freeGameSymbolHighA) {
+                            console.warn('純A模式數據缺失，回退到AKQJ混合模式');
+                            if (this.gameMode === 'yb') {
+                                // YB版本：回退到随机选择A/K/Q/J
+                                const randomSymbolType = Math.floor(Math.random() * 4) + 1;
+                                return this.getFreegameSymbolData(randomSymbolType);
+                            } else {
+                                return {
+                                    weights: this.freeGameHighSymbolWeight,
+                                    reels: this.freeGameSymbolHigh
+                                };
+                            }
+                        }
+                        return {
+                            weights: this.freeGameHighSymbolWeight,
+                            reels: this.freeGameSymbolHighA
+                        };
+                        
+                    case 2: // 第3行：純K模式
+                        console.log('🎰 [Buy Feature] 使用純K高表 (freeGameSymbolHighK)');
+                        if (!this.freeGameHighSymbolWeight || !this.freeGameSymbolHighK) {
+                            console.warn('純K模式數據缺失，回退到AKQJ混合模式');
+                            if (this.gameMode === 'yb') {
+                                // YB版本：回退到随机选择A/K/Q/J
+                                const randomSymbolType = Math.floor(Math.random() * 4) + 1;
+                                return this.getFreegameSymbolData(randomSymbolType);
+                            } else {
+                                return {
+                                    weights: this.freeGameHighSymbolWeight,
+                                    reels: this.freeGameSymbolHigh
+                                };
+                            }
+                        }
+                        return {
+                            weights: this.freeGameHighSymbolWeight,
+                            reels: this.freeGameSymbolHighK
+                        };
+                        
+                    case 3: // 第4行：純Q模式
+                        console.log('🎰 [Buy Feature] 使用純Q高表 (freeGameSymbolHighQ)');
+                        if (!this.freeGameHighSymbolWeight || !this.freeGameSymbolHighQ) {
+                            console.warn('純Q模式數據缺失，回退到AKQJ混合模式');
+                            if (this.gameMode === 'yb') {
+                                // YB版本：回退到随机选择A/K/Q/J
+                                const randomSymbolType = Math.floor(Math.random() * 4) + 1;
+                                return this.getFreegameSymbolData(randomSymbolType);
+                            } else {
+                                return {
+                                    weights: this.freeGameHighSymbolWeight,
+                                    reels: this.freeGameSymbolHigh
+                                };
+                            }
+                        }
+                        return {
+                            weights: this.freeGameHighSymbolWeight,
+                            reels: this.freeGameSymbolHighQ
+                        };
+                        
+                    case 4: // 第5行：純J模式
+                        console.log('🎰 [Buy Feature] 使用純J高表 (freeGameSymbolHighJ)');
+                        if (!this.freeGameHighSymbolWeight || !this.freeGameSymbolHighJ) {
+                            console.warn('純J模式數據缺失，回退到AKQJ混合模式');
+                            if (this.gameMode === 'yb') {
+                                // YB版本：回退到随机选择A/K/Q/J
+                                const randomSymbolType = Math.floor(Math.random() * 4) + 1;
+                                return this.getFreegameSymbolData(randomSymbolType);
+                            } else {
+                                return {
+                                    weights: this.freeGameHighSymbolWeight,
+                                    reels: this.freeGameSymbolHigh
+                                };
+                            }
+                        }
+                        return {
+                            weights: this.freeGameHighSymbolWeight,
+                            reels: this.freeGameSymbolHighJ
+                        };
+                        
+                    default:
+                        console.error(`🎰 [Buy Feature] 無效的符號模式行索引: ${rowIndex}`);
+                        // 回退到AKQJ混合模式
+                        if (this.gameMode === 'yb') {
+                            // YB版本：回退到随机选择A/K/Q/J
+                            const randomSymbolType = Math.floor(Math.random() * 4) + 1;
+                            return this.getFreegameSymbolData(randomSymbolType);
+                        } else {
+                            return {
+                                weights: this.freeGameHighSymbolWeight,
+                                reels: this.freeGameSymbolHigh
+                            };
+                        }
+                }
+            }
+
+            shuffleArray(array) {
+                // Fisher-Yates 洗牌算法
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+            }
+
+            toggleAutoSpin() {
+                if (this.isAutoSpin) {
+                    this.stopAutoSpin();
+                } else {
+                    this.startAutoSpin();
+                }
+            }
+
+            startAutoSpin() {
+                if (this.isSpinning) return;
+                
+                this.isAutoSpin = true;
+                this.updateButtonStates();
+                this.scheduleNextAutoSpin();
+            }
+
+            stopAutoSpin() {
+                this.isAutoSpin = false;
+                if (this.autoSpinInterval) {
+                    clearTimeout(this.autoSpinInterval);
+                    this.autoSpinInterval = null;
+                }
+                this.updateButtonStates();
+            }
+
+            scheduleNextAutoSpin() {
+                if (!this.isAutoSpin || this.balance < this.currentBet) {
+                    this.stopAutoSpin();
+                    return;
+                }
+                
+                // Wait 2 seconds before next spin
+                this.autoSpinInterval = setTimeout(() => {
+                    if (this.isAutoSpin && !this.isSpinning) {
+                        this.spin();
+                    }
+                }, 2000);
+            }
+
+            updateButtonStates() {
+                const spinBtn = document.getElementById('spin-btn');
+                const autoBtn = document.getElementById('auto-btn');
+                const betPlusBtn = document.getElementById('bet-plus');
+                const betMinusBtn = document.getElementById('bet-minus');
+                const buyBtn = document.getElementById('buy-feature-btn');
+                
+                // Update spin button
+                spinBtn.disabled = this.isSpinning || this.isAutoSpin || this.isBuyFeatureActive;
+                
+                // Update auto button
+                autoBtn.disabled = this.isSpinning || this.isBuyFeatureActive;
+                if (this.isAutoSpin) {
+                    autoBtn.textContent = '停止';
+                    autoBtn.classList.add('active');
+                } else {
+                    autoBtn.textContent = '自動';
+                    autoBtn.classList.remove('active');
+                }
+                
+                // Update bet buttons
+                betPlusBtn.disabled = this.isSpinning || this.isAutoSpin || this.isBuyFeatureActive;
+                betMinusBtn.disabled = this.isSpinning || this.isAutoSpin || this.isBuyFeatureActive;
+                
+                // Update buy feature button
+                if (buyBtn) {
+                    const cost = this.buyFeatureCost; // 使用固定金額
+                    const canAfford = this.balance >= cost;
+                    const inBasegame = this.gamePhase === 'basegame';
+                    
+                    buyBtn.disabled = this.isSpinning || this.isAutoSpin || this.isBuyFeatureActive || 
+                                     !canAfford || !inBasegame;
+                    
+                    // Update button text to show cost
+                    buyBtn.textContent = `購買特色 (${cost})`;
+                    
+                    // Visual feedback for affordability
+                    if (!canAfford && inBasegame) {
+                        buyBtn.style.opacity = '0.5';
+                        buyBtn.title = '餘額不足';
+                    } else if (!inBasegame) {
+                        buyBtn.style.opacity = '0.5';
+                        buyBtn.title = '只能在基礎遊戲中購買';
+                    } else {
+                        buyBtn.style.opacity = '1';
+                        buyBtn.title = `花費 ${cost} 購買免費遊戲特色`;
+                    }
+                }
+            }
+
+            async processCascadingWins() {
+                let totalPayout = 0;
+                let allResults = [];
+
+                while (true) {
+                    // Calculate results for current grid
+                    const result = this.calculateWays();
+                    
+                    if (result.winningWays.length === 0) {
+                        break; // No more wins, stop cascading
+                    }
+
+                    // Apply cascade multiplier
+                    this.cascadeMultiplier = this.getCascadeMultiplier(this.cascadeCount);
+                    this.updateMultiplierDisplay();
+                    
+                    // Apply multiplier to payout
+                    const multipliedPayout = result.totalPayout * this.cascadeMultiplier;
+                    totalPayout += multipliedPayout;
+                    
+                    // Store result with multiplier info
+                    result.multiplier = this.cascadeMultiplier;
+                    result.multipliedPayout = multipliedPayout;
+                    allResults.push(result);
+
+                    // Highlight winning symbols
+                    this.highlightWinningSymbols(result.winningWays);
+                    
+                    // Show current win results
+                    this.displayResults(result);
+                    
+                    // Wait for player to see the win (縮短等待時間)
+                    await new Promise(resolve => setTimeout(resolve, 800));
+
+                    // All symbols can be removed in cascading wins
+                    if (result.winningWays.length === 0) {
+                        break; // No wins to process
+                    }
+
+                    // Remove winning symbols
+                    await this.removeWinningSymbols(result.winningWays);
+                    
+                    // Drop new symbols
+                    await this.dropNewSymbols();
+                    
+                    // Increment cascade count for next iteration
+                    this.cascadeCount++;
+                }
+
+                // Add total payout to balance
+                this.balance += totalPayout;
+                
+                // 記錄這次旋轉的獲勝金額
+                this.lastSpinWin = totalPayout;
+                
+                // 處理免費遊戲分數累計
+                if (this.gamePhase === 'freegame') {
+                    this.freeGameTotalWin += totalPayout;
+                }
+                
+                this.updateDisplay();
+
+                // Display final results
+                this.displayFinalResults(allResults, totalPayout);
+            }
+
+            async animateReels() {
+                const promises = [];
+                
+                for (let reel = 0; reel < this.reels; reel++) {
+                    promises.push(this.animateReel(reel, 1000 + reel * 200));
+                }
+                
+                await Promise.all(promises);
+            }
+
+            animateReel(reelIndex, duration) {
+                return new Promise(resolve => {
+                    const symbolsContainer = document.getElementById(`symbols-${reelIndex}`);
+                    
+                    // Clear existing symbols
+                    symbolsContainer.innerHTML = '';
+                    
+                    // Create a single container for all 4 symbols (as one connected object)
+                    const reelGroup = document.createElement('div');
+                    reelGroup.style.position = 'absolute';
+                    reelGroup.style.width = '100%';
+                    reelGroup.style.height = '480px'; // 4 symbols * 120px each
+                    reelGroup.style.top = '0';
+                    reelGroup.style.left = '0';
+                    reelGroup.style.transform = 'translateY(-400px)'; // Start above screen
+                    reelGroup.style.opacity = '0';
+                    reelGroup.style.transition = 'all 1s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+                    
+                    // Create all 4 symbols inside the group
+                    for (let i = 0; i < 4; i++) {
+                        const finalSymbol = this.currentGrid[reelIndex][i];
+                        
+                        // Create symbol element
+                        const symbolDiv = document.createElement('div');
+                        symbolDiv.className = `symbol ${finalSymbol}`;
+                        symbolDiv.style.position = 'absolute';
+                        symbolDiv.style.top = `${i * 120}px`;
+                        symbolDiv.style.width = '100%';
+                        symbolDiv.style.height = '120px';
+                        symbolDiv.style.display = 'flex';
+                        symbolDiv.style.alignItems = 'center';
+                        symbolDiv.style.justifyContent = 'center';
+                        symbolDiv.style.borderBottom = '1px solid #333';
+                        symbolDiv.style.background = 'linear-gradient(45deg, #1a1a1a, #2a2a2a)';
+                        symbolDiv.style.overflow = 'hidden';
+                        
+                        // Add image with fallback
+                        const img = this.createSymbolImage(finalSymbol);
+                        symbolDiv.appendChild(img);
+                        
+                        reelGroup.appendChild(symbolDiv);
+                    }
+                    
+                    symbolsContainer.appendChild(reelGroup);
+                    
+                    // Animate the entire group falling down as one unit
+                    setTimeout(() => {
+                        reelGroup.style.transform = 'translateY(0)';
+                        reelGroup.style.opacity = '1';
+                        
+                        // Resolve after animation completes
+                        setTimeout(() => {
+                            resolve();
+                        }, 1000); // Wait for animation to complete
+                    }, 100);
+                });
+            }
+
+            calculateWays() {
+                const result = {
+                    winningWays: [],
+                    totalPayout: 0,
+                    scatterCount: 0
+                };
+
+                // Calculate regular ways - only check base symbols (not golden versions or WILD)
+                const baseSymbols = ['M1', 'M2', 'M3', 'M4', 'A', 'K', 'Q', 'J'];
+                for (const symbol of baseSymbols) {
+
+                    let consecutiveReels = 0;
+                    let waysMultiplier = 1;
+                    let hasGoldenSymbols = false;
+
+                    for (let reel = 0; reel < this.reels; reel++) {
+                        const symbolCount = this.countSymbolInReel(reel, symbol);
+                        
+                        if (symbolCount > 0) {
+                            consecutiveReels++;
+                            waysMultiplier *= symbolCount;
+                            
+                            // Check if this reel has golden symbols contributing
+                            for (let row = 0; row < this.rows; row++) {
+                                const currentSymbol = this.currentGrid[reel][row];
+                                if (currentSymbol === symbol + '_G') {
+                                    hasGoldenSymbols = true;
+                                }
+                            }
+                        } else {
+                            break;
+                        }
+                    }
+
+                    if (consecutiveReels >= 3) {
+                        const payout = waysMultiplier * this.getSymbolValue(symbol, consecutiveReels);
+                        result.winningWays.push({
+                            symbol,
+                            consecutiveReels,
+                            ways: waysMultiplier,
+                            payout,
+                            hasGoldenSymbols
+                        });
+                        result.totalPayout += payout;
+                    }
+                }
+
+
+                return result;
+            }
+
+            getSymbolValue(symbol, consecutiveReels) {
+                // Use linkpoint parameter for symbol values
+                if (!this.linkpoint) {
+                    // Fallback values if linkpoint not available
+                    const fallbackValues = {
+                        'M1': 1000, 'M2': 500, 'M3': 250, 'M4': 125,
+                        'A': 75, 'K': 50, 'Q': 25, 'J': 10
+                    };
+                    return fallbackValues[symbol] || 10;
+                }
+                
+                // Get symbol index in the linkpoint array
+                const symbolIndex = this.symbolOrder.indexOf(symbol);
+                if (symbolIndex === -1) return 10; // Fallback
+                
+                // linkpoint structure: [3 reels values, 4 reels values, 5 reels values]
+                // consecutiveReels: 3, 4, 5 -> linkpoint index: 0, 1, 2
+                const linkpointIndex = Math.min(consecutiveReels - 3, 2);
+                
+                return this.linkpoint[linkpointIndex][symbolIndex] * this.currentBet / 100;
+            }
+
+            countSymbolInReel(reelIndex, targetSymbol) {
+                let count = 0;
+                const targetBase = this.getBaseSymbol(targetSymbol);
+                
+                for (let row = 0; row < this.rows; row++) {
+                    const symbol = this.currentGrid[reelIndex][row];
+                    const symbolBase = this.getBaseSymbol(symbol);
+                    
+                    // Count if symbol matches target (regular or golden version) or is WILD/WILD2
+                    if (symbolBase === targetBase || symbol === 'WILD' || symbol === 'WILD2') {
+                        count++;
+                    }
+                }
+                return count;
+            }
+
+
+            displayResults(result) {
+                const resultContent = document.getElementById('result-content');
+                
+                if (result.winningWays.length === 0) {
+                    let html = '<div style="color: #7f8c8d;">本局沒有中獎</div>';
+                    
+                    // Show randomwild info even if no wins
+                    if (this.randomwildTriggered) {
+                        html += '<div style="color: #ff6b9d; margin-top: 10px; font-weight: bold;">⭐ Randomwild 特色觸發 ⭐</div>';
+                    }
+                    
+                    resultContent.innerHTML = html;
+                    return;
+                }
+
+                let html = '';
+                
+                // Show randomwild notification
+                if (this.randomwildTriggered) {
+                    html += `<div style="color: #ff6b9d; font-size: 1.1em; margin-bottom: 10px; text-align: center; font-weight: bold;">⭐ Randomwild 特色觸發 ⭐</div>`;
+                }
+                
+                // Show multiplier if it exists
+                if (result.multiplier && result.multiplier > 1) {
+                    html += `<div style="color: #ffd700; font-size: 1.2em; margin-bottom: 10px; text-align: center;">連鎖倍數: X${result.multiplier}</div>`;
+                }
+                
+                result.winningWays.forEach(way => {
+                    const isBigWin = way.payout >= 1000;
+                    const hasGoldenContribution = way.hasGoldenSymbols;
+                    const finalPayout = result.multiplier ? way.payout * result.multiplier : way.payout;
+                    
+                    html += `
+                        <div class="win-line ${isBigWin ? 'big-win' : ''} ${hasGoldenContribution ? 'golden-symbol' : ''}">
+                            <span>${way.symbol}${hasGoldenContribution ? '+G' : ''} x${way.consecutiveReels}</span>
+                            <span>${way.ways} ways</span>
+                            <span style="color: #ffd700; font-weight: bold;">${finalPayout.toLocaleString()}</span>
+                        </div>
+                    `;
+                });
+
+                const finalTotalPayout = result.multipliedPayout || result.totalPayout;
+                if (finalTotalPayout >= 2000) {
+                    html += `<div style="color: #e74c3c; font-size: 1.2em; margin-top: 10px; animation: bigWinGlow 1s infinite;">🎉 大獎中獎！ 🎉</div>`;
+                }
+
+                resultContent.innerHTML = html;
+            }
+
+            highlightWinningSymbols(winningWays) {
+                // Remove previous highlights
+                document.querySelectorAll('.winning-symbol').forEach(el => {
+                    el.classList.remove('winning-symbol');
+                });
+
+                // Add new highlights
+                winningWays.forEach(way => {
+                    this.highlightWaySymbols(way.symbol, way.consecutiveReels);
+                });
+            }
+
+            highlightWaySymbols(symbol, consecutiveReels) {
+                for (let reel = 0; reel < consecutiveReels; reel++) {
+                    const symbolsContainer = document.getElementById(`symbols-${reel}`);
+                    const reelGroup = symbolsContainer.children[0];
+                    
+                    if (reelGroup) {
+                        for (let row = 0; row < this.rows; row++) {
+                            const currentSymbol = this.currentGrid[reel][row];
+                            const currentBase = this.getBaseSymbol(currentSymbol);
+                            const symbolBase = this.getBaseSymbol(symbol);
+                            
+                            // Highlight if symbol matches (regular/golden version) or is WILD
+                            if (currentBase === symbolBase || currentSymbol === 'WILD') {
+                                // Find the correct symbol element in the reel group
+                                const symbolElement = this.findSymbolElementAtPosition(reelGroup, row);
+                                if (symbolElement) {
+                                    symbolElement.classList.add('winning-symbol');
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+
+            findSymbolElementAtPosition(reelGroup, targetRow) {
+                // After ensureCleanReelStructure, DOM should have exactly 4 elements in order
+                if (reelGroup && reelGroup.children.length === 4 && targetRow >= 0 && targetRow < 4) {
+                    return reelGroup.children[targetRow];
+                }
+                
+                console.warn(`Invalid symbol lookup: reelGroup has ${reelGroup ? reelGroup.children.length : 0} children, looking for row ${targetRow}`);
+                return null;
+            }
+
+            async removeWinningSymbols(winningWays) {
+                // Mark symbols for removal and transformation
+                const symbolsToRemove = [];
+                const symbolsToTransform = [];
+                
+                for (const way of winningWays) {
+                    const wayBase = this.getBaseSymbol(way.symbol);
+                    
+                    // Mark winning symbols for removal or transformation
+                    for (let reel = 0; reel < way.consecutiveReels; reel++) {
+                        for (let row = 0; row < this.rows; row++) {
+                            const currentSymbol = this.currentGrid[reel][row];
+                            const currentBase = this.getBaseSymbol(currentSymbol);
+                            
+                            // If symbol matches the winning way (regular, golden, WILD, or WILD2)
+                            if (currentBase === wayBase || currentSymbol === 'WILD' || currentSymbol === 'WILD2') {
+                                if (currentSymbol.endsWith('_G')) {
+                                    // Only golden symbols transform to WILD2
+                                    symbolsToTransform.push({reel, row});
+                                } else {
+                                    // Regular symbols, WILD, and WILD2 are always removed
+                                    symbolsToRemove.push({reel, row});
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Remove duplicate positions
+                const uniqueRemovePositions = symbolsToRemove.filter((pos, index, self) => 
+                    index === self.findIndex(p => p.reel === pos.reel && p.row === pos.row)
+                );
+                const uniqueTransformPositions = symbolsToTransform.filter((pos, index, self) => 
+                    index === self.findIndex(p => p.reel === pos.reel && p.row === pos.row)
+                );
+
+                // Animate removal of regular symbols and WILD
+                for (const pos of uniqueRemovePositions) {
+                    const symbolsContainer = document.getElementById(`symbols-${pos.reel}`);
+                    const reelGroup = symbolsContainer.children[0];
+                    
+                    if (reelGroup && reelGroup.children[pos.row]) {
+                        const symbolElement = reelGroup.children[pos.row];
+                        symbolElement.style.transition = 'all 0.5s ease-out';
+                        symbolElement.style.transform = 'scale(0)';
+                        symbolElement.style.opacity = '0';
+                        
+                        // Mark as removed in grid
+                        this.currentGrid[pos.reel][pos.row] = null;
+                    }
+                }
+
+                // Transform golden symbols to WILD first (will convert to WILD2 if randomwild triggers)
+                let goldenSymbolsConverted = 0;
+                const convertedPositions = []; // Track positions for potential WILD2 conversion
+                
+                for (const pos of uniqueTransformPositions) {
+                    const symbolsContainer = document.getElementById(`symbols-${pos.reel}`);
+                    const reelGroup = symbolsContainer.children[0];
+                    
+                    if (reelGroup && reelGroup.children[pos.row]) {
+                        const symbolElement = reelGroup.children[pos.row];
+                        
+                        // Transform to WILD in grid first
+                        this.currentGrid[pos.reel][pos.row] = 'WILD';
+                        goldenSymbolsConverted++;
+                        convertedPositions.push({reel: pos.reel, row: pos.row, element: symbolElement});
+                        
+                        // Update visual element to WILD
+                        symbolElement.className = 'symbol WILD';
+                        symbolElement.style.transition = 'all 0.5s ease-out';
+                        symbolElement.style.transform = 'scale(1.1)';
+                        
+                        // Update image to WILD
+                        const img = symbolElement.querySelector('img');
+                        if (img) {
+                            const newImg = this.createSymbolImage('WILD');
+                            symbolElement.replaceChild(newImg, img);
+                        }
+                        
+                        // Reset transform after animation
+                        setTimeout(() => {
+                            symbolElement.style.transform = 'scale(1)';
+                        }, 500);
+                    }
+                }
+
+                // Update golden symbols converted count
+                this.goldenSymbolsConvertedThisRound += goldenSymbolsConverted;
+                if (goldenSymbolsConverted > 0) {
+                    console.log(`🏆 轉換了 ${goldenSymbolsConverted} 個黃金符號為 WILD，本輪總計: ${this.goldenSymbolsConvertedThisRound}`);
+                }
+
+                // Wait for animations to complete
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                // 暫存轉換信息，randomwild將在新符號落下後處理
+                if (goldenSymbolsConverted > 0) {
+                    this.pendingRandomwildCheck = {
+                        convertedPositions: convertedPositions,
+                        goldenSymbolsConverted: goldenSymbolsConverted
+                    };
+                }
+            }
+
+            async dropNewSymbols() {
+                const promises = [];
+                
+                for (let reel = 0; reel < this.reels; reel++) {
+                    promises.push(this.dropNewSymbolsInReel(reel));
+                }
+                
+                await Promise.all(promises);
+                
+                // 新符號落下完成後，檢查是否需要處理randomwild
+                if (this.pendingRandomwildCheck) {
+                    console.log('🌟 新符號落下完成，開始處理randomwild');
+                    
+                    const originalWildPositions = this.findOriginalWildPositions();
+                    const randomwildTriggered = this.checkAndApplyRandomwild(originalWildPositions);
+                    
+                    // 如果randomwild觸發，將剛轉換的WILD改為WILD2以示區別
+                    if (randomwildTriggered && this.pendingRandomwildCheck.convertedPositions) {
+                        this.convertWildToWild2(this.pendingRandomwildCheck.convertedPositions);
+                    }
+                    
+                    // 清理暫存信息
+                    this.pendingRandomwildCheck = null;
+                }
+            }
+
+            findOriginalWildPositions() {
+                // 找到原本就是WILD的位置（在旋轉開始時就存在的）
+                const originalWildPositions = [];
+                
+                // 這個函數需要在旋轉開始時記錄原始WILD位置
+                // 暫時返回空數組，因為我們主要關心的是避免從黃金符號轉換的WILD
+                return originalWildPositions;
+            }
+
+            async dropNewSymbolsInReel(reelIndex) {
+                const symbolsContainer = document.getElementById(`symbols-${reelIndex}`);
+                const reelGroup = symbolsContainer.children[0];
+                
+                if (!reelGroup) return;
+
+                // Analyze current grid state
+                const existingSymbols = [];
+                const emptyPositions = [];
+                
+                // Collect existing symbols and identify empty positions
+                for (let row = 0; row < this.rows; row++) {
+                    if (this.currentGrid[reelIndex][row] !== null) {
+                        existingSymbols.push({
+                            symbol: this.currentGrid[reelIndex][row],
+                            originalRow: row
+                        });
+                    } else {
+                        emptyPositions.push(row);
+                    }
+                }
+                
+                // If no symbols were removed, no need to animate
+                if (emptyPositions.length === 0) return;
+                
+                // Calculate how symbols should move down
+                const finalGrid = new Array(this.rows);
+                const symbolsToAnimate = [];
+                
+                // Fill from bottom up with existing symbols
+                let existingIndex = existingSymbols.length - 1;
+                for (let row = this.rows - 1; row >= 0; row--) {
+                    if (existingIndex >= 0) {
+                        finalGrid[row] = existingSymbols[existingIndex].symbol;
+                        
+                        // Check if symbol needs to move
+                        const originalRow = existingSymbols[existingIndex].originalRow;
+                        if (originalRow !== row) {
+                            symbolsToAnimate.push({
+                                symbol: existingSymbols[existingIndex].symbol,
+                                fromRow: originalRow,
+                                toRow: row,
+                                isMoving: true
+                            });
+                        } else {
+                            symbolsToAnimate.push({
+                                symbol: existingSymbols[existingIndex].symbol,
+                                fromRow: originalRow,
+                                toRow: row,
+                                isMoving: false
+                            });
+                        }
+                        existingIndex--;
+                    } else {
+                        // Generate new symbol for empty position using proper reel sampling
+                        const newSymbol = this.generateNewSymbolForReel(reelIndex);
+                        finalGrid[row] = newSymbol;
+                        symbolsToAnimate.push({
+                            symbol: newSymbol,
+                            fromRow: -1, // Coming from above
+                            toRow: row,
+                            isNew: true
+                        });
+                    }
+                }
+                
+                // Update grid
+                this.currentGrid[reelIndex] = finalGrid;
+                
+                // Create final reel group with all symbols in correct positions
+                await this.createFinalReelGroup(reelIndex, symbolsToAnimate);
+            }
+            
+            async createFinalReelGroup(reelIndex, symbolsToAnimate) {
+                const symbolsContainer = document.getElementById(`symbols-${reelIndex}`);
+                const originalReelGroup = symbolsContainer.children[0];
+                
+                // Create new reel group immediately to avoid flashing
+                const newReelGroup = document.createElement('div');
+                newReelGroup.style.position = 'absolute';
+                newReelGroup.style.width = '100%';
+                newReelGroup.style.height = '480px';
+                newReelGroup.style.top = '0';
+                newReelGroup.style.left = '0';
+                
+                // Create all symbols in their current positions first
+                const stationarySymbols = symbolsToAnimate.filter(s => !s.isMoving && !s.isNew);
+                const movingSymbols = symbolsToAnimate.filter(s => s.isMoving);
+                const newSymbols = symbolsToAnimate.filter(s => s.isNew);
+                
+                // Add stationary symbols first (no animation needed)
+                for (const symbolInfo of stationarySymbols) {
+                    const symbolDiv = document.createElement('div');
+                    symbolDiv.className = `symbol ${symbolInfo.symbol}`;
+                    symbolDiv.style.position = 'absolute';
+                    symbolDiv.style.top = `${symbolInfo.toRow * 120}px`;
+                    symbolDiv.style.width = '100%';
+                    symbolDiv.style.height = '120px';
+                    symbolDiv.style.display = 'flex';
+                    symbolDiv.style.alignItems = 'center';
+                    symbolDiv.style.justifyContent = 'center';
+                    symbolDiv.style.borderBottom = '1px solid #333';
+                    symbolDiv.style.background = 'linear-gradient(45deg, #1a1a1a, #2a2a2a)';
+                    symbolDiv.style.overflow = 'hidden';
+                    
+                    const img = this.createSymbolImage(symbolInfo.symbol);
+                    symbolDiv.appendChild(img);
+                    
+                    newReelGroup.appendChild(symbolDiv);
+                }
+                
+                // Add moving symbols at their original positions, then animate
+                for (const symbolInfo of movingSymbols) {
+                    const symbolDiv = document.createElement('div');
+                    symbolDiv.className = `symbol ${symbolInfo.symbol}`;
+                    symbolDiv.style.position = 'absolute';
+                    symbolDiv.style.top = `${symbolInfo.fromRow * 120}px`;
+                    symbolDiv.style.width = '100%';
+                    symbolDiv.style.height = '120px';
+                    symbolDiv.style.display = 'flex';
+                    symbolDiv.style.alignItems = 'center';
+                    symbolDiv.style.justifyContent = 'center';
+                    symbolDiv.style.borderBottom = '1px solid #333';
+                    symbolDiv.style.background = 'linear-gradient(45deg, #1a1a1a, #2a2a2a)';
+                    symbolDiv.style.overflow = 'hidden';
+                    symbolDiv.style.transition = 'top 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+                    
+                    const img = this.createSymbolImage(symbolInfo.symbol);
+                    symbolDiv.appendChild(img);
+                    
+                    newReelGroup.appendChild(symbolDiv);
+                }
+                
+                // Add new symbols above the visible area
+                for (const symbolInfo of newSymbols) {
+                    const symbolDiv = document.createElement('div');
+                    symbolDiv.className = `symbol ${symbolInfo.symbol}`;
+                    symbolDiv.style.position = 'absolute';
+                    symbolDiv.style.top = `${-120 - (newSymbols.indexOf(symbolInfo) * 120)}px`; // Start above visible area
+                    symbolDiv.style.width = '100%';
+                    symbolDiv.style.height = '120px';
+                    symbolDiv.style.display = 'flex';
+                    symbolDiv.style.alignItems = 'center';
+                    symbolDiv.style.justifyContent = 'center';
+                    symbolDiv.style.borderBottom = '1px solid #333';
+                    symbolDiv.style.background = 'linear-gradient(45deg, #1a1a1a, #2a2a2a)';
+                    symbolDiv.style.overflow = 'hidden';
+                    symbolDiv.style.transition = 'top 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+                    
+                    const img = this.createSymbolImage(symbolInfo.symbol);
+                    symbolDiv.appendChild(img);
+                    
+                    newReelGroup.appendChild(symbolDiv);
+                }
+                
+                // Replace the old reel group
+                symbolsContainer.innerHTML = '';
+                symbolsContainer.appendChild(newReelGroup);
+                
+                // Start animations after a brief delay
+                setTimeout(() => {
+                    // Animate moving symbols
+                    movingSymbols.forEach((symbolInfo, index) => {
+                        const symbolElement = newReelGroup.children[stationarySymbols.length + index];
+                        if (symbolElement) {
+                            symbolElement.style.top = `${symbolInfo.toRow * 120}px`;
+                        }
+                    });
+                    
+                    // Animate new symbols
+                    newSymbols.forEach((symbolInfo, index) => {
+                        const symbolElement = newReelGroup.children[stationarySymbols.length + movingSymbols.length + index];
+                        if (symbolElement) {
+                            symbolElement.style.top = `${symbolInfo.toRow * 120}px`;
+                        }
+                    });
+                }, 50);
+                
+                // Wait for animations to complete
+                const maxDuration = Math.max(
+                    movingSymbols.length > 0 ? 600 : 0,
+                    newSymbols.length > 0 ? 800 : 0
+                );
+                await new Promise(resolve => setTimeout(resolve, maxDuration + 100));
+                
+                // Clean up and ensure proper structure after animations
+                this.ensureCleanReelStructure(reelIndex);
+            }
+            
+            ensureCleanReelStructure(reelIndex) {
+                const symbolsContainer = document.getElementById(`symbols-${reelIndex}`);
+                const reelGroup = symbolsContainer.children[0];
+                
+                if (!reelGroup) return;
+                
+                // Create a clean reel group with exactly 4 symbols in order
+                const cleanReelGroup = document.createElement('div');
+                cleanReelGroup.style.position = 'absolute';
+                cleanReelGroup.style.width = '100%';
+                cleanReelGroup.style.height = '480px';
+                cleanReelGroup.style.top = '0';
+                cleanReelGroup.style.left = '0';
+                
+                // Create symbols in correct order based on currentGrid
+                for (let row = 0; row < this.rows; row++) {
+                    const symbol = this.currentGrid[reelIndex][row];
+                    const symbolDiv = document.createElement('div');
+                    symbolDiv.className = `symbol ${symbol}`;
+                    symbolDiv.style.position = 'absolute';
+                    symbolDiv.style.top = `${row * 120}px`;
+                    symbolDiv.style.width = '100%';
+                    symbolDiv.style.height = '120px';
+                    symbolDiv.style.display = 'flex';
+                    symbolDiv.style.alignItems = 'center';
+                    symbolDiv.style.justifyContent = 'center';
+                    symbolDiv.style.borderBottom = '1px solid #333';
+                    symbolDiv.style.background = 'linear-gradient(45deg, #1a1a1a, #2a2a2a)';
+                    symbolDiv.style.overflow = 'hidden';
+                    
+                    const img = this.createSymbolImage(symbol);
+                    symbolDiv.appendChild(img);
+                    
+                    cleanReelGroup.appendChild(symbolDiv);
+                }
+                
+                // Replace the existing reel group
+                symbolsContainer.innerHTML = '';
+                symbolsContainer.appendChild(cleanReelGroup);
+            }
+
+            displayFinalResults(allResults, totalPayout) {
+                const resultContent = document.getElementById('result-content');
+                
+                if (allResults.length === 0) {
+                    resultContent.innerHTML = '<div style="color: #7f8c8d;">本局沒有中獎</div>';
+                    return;
+                }
+
+                let html = `<div style="color: #ffd700; font-size: 1.1em; margin-bottom: 10px;">連鎖獲勝 x${allResults.length}</div>`;
+                
+                allResults.forEach((result, index) => {
+                    html += `<div style="margin-bottom: 10px; padding: 5px; background: rgba(255,255,255,0.05); border-radius: 5px;">`;
+                    html += `<div style="color: #ffd700; font-size: 0.9em;">第 ${index + 1} 次獲勝 (X${result.multiplier || 1}):</div>`;
+                    
+                    result.winningWays.forEach(way => {
+                        const isBigWin = way.payout >= 1000;
+                        const hasGoldenContribution = way.hasGoldenSymbols;
+                        const finalPayout = result.multiplier ? way.payout * result.multiplier : way.payout;
+                        
+                        html += `
+                            <div class="win-line ${isBigWin ? 'big-win' : ''} ${hasGoldenContribution ? 'golden-symbol' : ''}" style="margin: 2px 0;">
+                                <span>${way.symbol}${hasGoldenContribution ? '+G' : ''} x${way.consecutiveReels}</span>
+                                <span>${way.ways} ways</span>
+                                <span style="color: #ffd700; font-weight: bold;">${finalPayout.toLocaleString()}</span>
+                            </div>
+                        `;
+                    });
+                    html += `</div>`;
+                });
+
+                if (totalPayout >= 2000) {
+                    html += `<div style="color: #e74c3c; font-size: 1.3em; margin-top: 10px; animation: bigWinGlow 1s infinite;">🎉 超級大獎！總獲勝: ${totalPayout.toLocaleString()} 🎉</div>`;
+                } else {
+                    html += `<div style="color: #ffd700; font-size: 1.1em; margin-top: 10px;">總獲勝: ${totalPayout.toLocaleString()}</div>`;
+                }
+                
+                // 在免費遊戲期間顯示累計總分
+                if (this.gamePhase === 'freegame') {
+                    html += `<div style="color: #ff6b6b; font-size: 1.2em; font-weight: bold; margin-top: 10px; border: 2px solid #ff6b6b; padding: 5px; border-radius: 5px;">🎰 免費遊戲累計: ${this.freeGameTotalWin.toLocaleString()} (剩餘 ${this.freeGameSpinsRemaining} 局) 🎰</div>`;
+                }
+
+                resultContent.innerHTML = html;
+            }
+
+
+            updateDisplay() {
+                // 確保餘額是數值
+                if (isNaN(this.balance) || this.balance === undefined || this.balance === null) {
+                    console.error('餘額不是數值，重置為0:', this.balance);
+                    this.balance = 0;
+                }
+                
+                document.getElementById('balance').textContent = this.balance.toLocaleString();
+                document.getElementById('bet').textContent = this.currentBet.toLocaleString();
+                
+                // 在免費遊戲期間顯示累計總獲勝，基礎遊戲顯示當前旋轉獲勝
+                if (this.gamePhase === 'freegame') {
+                    document.getElementById('win').textContent = this.freeGameTotalWin.toLocaleString();
+                } else {
+                    // 基礎遊戲顯示當前旋轉的獲勝金額
+                    document.getElementById('win').textContent = (this.lastSpinWin || 0).toLocaleString();
+                }
+                
+                this.updateGameStateDisplay();
+            }
+        }
+
+        // Initialize game when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new WayGameSlot();
+        });
+    </script>
+</body>
+</html>

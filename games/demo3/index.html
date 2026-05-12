@@ -1,0 +1,1340 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sugar Rush - Base Game Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 900px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #764ba2;
+            margin-bottom: 20px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .info-panel {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            color: white;
+        }
+
+        .info-item {
+            text-align: center;
+        }
+
+        .info-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            font-size: 1.8em;
+            font-weight: bold;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .cell {
+            aspect-ratio: 1;
+            border-radius: 10px;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease;
+            cursor: pointer;
+        }
+
+        .cell:hover {
+            transform: scale(1.05);
+        }
+
+        .cell img {
+            width: 85%;
+            height: 85%;
+            object-fit: contain;
+        }
+
+        .cell.matched {
+            animation: pulse 0.5s ease-in-out;
+        }
+
+        .cell.dropping {
+            animation: drop 0.5s ease-in;
+        }
+
+        .cell.fixed {
+            box-shadow: 0 0 15px rgba(255, 107, 107, 0.6), inset 0 0 10px rgba(255, 107, 107, 0.2);
+            border: 2px solid rgba(255, 107, 107, 0.8);
+        }
+
+        .cell.block-2x2 {
+            position: relative;
+            grid-column: span 2;
+            grid-row: span 2;
+            z-index: 10;
+        }
+
+        .cell.block-2x2 img {
+            width: 90%;
+            height: 90%;
+        }
+
+        .cell.block-hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .cell.eliminated-1 {
+            background: linear-gradient(135deg, #fff9e6 0%, #ffe8cc 100%);
+        }
+
+        .cell.eliminated-2 {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffd966 100%);
+        }
+
+        .cell.eliminated-3 {
+            background: linear-gradient(135deg, #ffe699 0%, #ffcc33 100%);
+        }
+
+        .cell.eliminated-4plus {
+            background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); background-color: #ffe082; }
+        }
+
+        @keyframes drop {
+            0% { transform: translateY(-100%); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+
+        .multiplier {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 5px;
+            font-size: 0.7em;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 15px 40px;
+            font-size: 1.1em;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        #spinBtn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        #spinBtn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        #autoBtn {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        #autoBtn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .log-panel {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 0.9em;
+        }
+
+        .log-entry {
+            padding: 5px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+
+        .match-detail {
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .score-highlight {
+            color: #f5576c;
+            font-weight: bold;
+        }
+
+        @media (max-width: 768px) {
+            .game-container {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .board {
+                gap: 5px;
+                padding: 10px;
+            }
+
+            button {
+                padding: 12px 25px;
+                font-size: 1em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🍬 Sugar Rush 🍬</h1>
+        
+        <div class="info-panel">
+            <div class="info-item">
+                <div class="info-label" id="modeLabel">BASE GAME</div>
+                <div class="info-value" id="totalScore">0</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">本輪分數</div>
+                <div class="info-value" id="roundScore">0</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Cascades</div>
+                <div class="info-value" id="cascadeCount">0</div>
+            </div>
+        </div>
+
+        <div class="board" id="gameBoard"></div>
+
+        <div class="controls">
+            <button id="spinBtn">🎰 SPIN</button>
+            <button id="freeGameBtn">🎉 FREE GAME (10 spins)</button>
+            <button id="superFreeGameBtn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">⭐ SUPER FREE GAME (10 spins)</button>
+        </div>
+        
+        <div id="freeGameInfo" style="display: none; text-align: center; margin: 15px 0; padding: 10px; background: linear-gradient(135deg, #ff6b6b, #ee5a6f); color: white; border-radius: 10px; font-weight: bold; font-size: 1.2em;">
+            🎉 FREE GAME - 剩餘 <span id="remainingSpins">0</span> 次 SPIN
+        </div>
+
+        <div class="log-panel" id="logPanel">
+            <div class="log-entry">遊戲準備就緒，點擊 SPIN 開始遊戲！</div>
+        </div>
+    </div>
+
+    <script src="data.js"></script>
+    <script>
+        class SugarRushGame {
+            constructor() {
+                this.rows = 7;
+                this.cols = 7;
+                this.board = [];
+                this.multipliers = [];
+                this.eliminateTimes = [];
+                this.fixedMask = [];  // 追蹤固定格子
+                this.fixedCells = new Set();  // 固定格子的集合
+                this.totalScore = 0;
+                this.currentModeScore = 0;  // 當前遊戲模式的累計分數
+                this.symbols = [1, 2, 3, 4, 5, 6, 7, 8]; // C1, M1-M7
+                this.isSpinning = false;
+                this.gameData = typeof data !== 'undefined' ? data : null;
+                this.eliminate_count = 0;
+                
+                // Free Game 相關
+                this.isFreeGame = false;
+                this.isSuperFreeGame = false;
+                this.remainingSpins = 0;
+                this.freeGameTotalScore = 0;
+                
+                // 初始化 drop_set
+                this.drop_set = 1;
+                this.loadDropData();
+                this.loadEliminateData();
+                
+                this.initBoard();
+                this.renderBoard();
+            }
+
+            initBoard() {
+                this.board = Array(this.rows).fill(0).map(() => Array(this.cols).fill(0));
+                // SuperFreeGame 初始倍數為 2，其他為 1
+                const initialMult = this.isSuperFreeGame ? 2 : 1;
+                this.multipliers = Array(this.rows).fill(0).map(() => Array(this.cols).fill(initialMult));
+                this.eliminateTimes = Array(this.rows).fill(0).map(() => Array(this.cols).fill(0));
+                this.fixedMask = Array(this.rows).fill(0).map(() => Array(this.cols).fill(false));
+                this.fixedCells = new Set();
+            }
+
+            getSymbolImage(symbolId) {
+                if (symbolId === 0) return '';
+                if (symbolId === 1) return 'pic/C1.png';
+                
+                // 防禦性處理：如果是 MY 符號，轉換為隨機符號
+                if (symbolId >= 9 && symbolId <= 11) {
+                    console.warn(`Unexpected MY symbol ${symbolId} in display, converting to M2`);
+                    return 'pic/M2.png';
+                }
+                
+                // 正常符號 2-8 對應 M1-M7
+                if (symbolId >= 2 && symbolId <= 8) {
+                    return `pic/M${symbolId - 1}.png`;
+                }
+                
+                // 不應該出現的情況
+                console.error(`Invalid symbol ID: ${symbolId}`);
+                return '';
+            }
+
+            selectReelByWeight() {
+                let weightKey;
+                if (this.isSuperFreeGame) {
+                    weightKey = 'SuperFreeReelWeight';
+                } else if (this.isFreeGame) {
+                    weightKey = 'FreeReelWeight';
+                } else {
+                    weightKey = 'ReelWeight';
+                }
+                if (!this.gameData || !this.gameData[weightKey]) {
+                    console.error('Game data not loaded properly');
+                    return 1; // 預設值
+                }
+                const weights = this.gameData[weightKey];
+                return this.weightedRandom(weights) + 1;
+            }
+
+            selectDropByWeight(eliminateCount) {
+                let weightKey;
+                if (this.isSuperFreeGame) {
+                    weightKey = 'SuperFreeDropWeight';
+                } else if (this.isFreeGame) {
+                    weightKey = 'FreeDropWeight';
+                } else {
+                    weightKey = 'DropWeight';
+                }
+                if (!this.gameData || !this.gameData[weightKey]) {
+                    return 1; // 預設值
+                }
+                
+                const dropWeights2D = this.gameData[weightKey];
+                
+                // 根據消除次數選擇對應的權重行
+                let rowIdx;
+                if (eliminateCount <= 0) {
+                    rowIdx = 0;  // 初始選擇第1行
+                } else if (eliminateCount >= 1 && eliminateCount <= 3) {
+                    rowIdx = 0;
+                } else if (eliminateCount >= 4 && eliminateCount <= 6) {
+                    rowIdx = 1;
+                } else if (eliminateCount >= 7 && eliminateCount <= 9) {
+                    rowIdx = 2;
+                } else {  // 10+
+                    rowIdx = 3;
+                }
+                
+                const dropWeights = dropWeights2D[rowIdx];
+                return this.weightedRandom(dropWeights) + 1;
+            }
+
+            loadDropData() {
+                if (!this.gameData) return;
+                
+                let prefix;
+                if (this.isSuperFreeGame) {
+                    prefix = 'SuperFreeGameDrop';
+                } else if (this.isFreeGame) {
+                    prefix = 'FreeGameDrop';
+                } else {
+                    prefix = 'BaseGameDrop';
+                }
+                const dropKey = `${prefix}${this.drop_set}`;
+                const dropRWeightKey = `${prefix}RWeight${this.drop_set}`;
+                const dropPWeightKey = `${prefix}PWeight${this.drop_set}`;
+                const dropMethodKey = `${prefix}method${this.drop_set}`;
+                const dropMyKey = `${prefix}My${this.drop_set}`;
+                
+                this.drop_symbol_table = this.gameData[dropKey] || [];
+                this.drop_rweights = this.gameData[dropRWeightKey] || [];
+                this.drop_pweights = this.gameData[dropPWeightKey] || [];
+                this.drop_method_weights = this.gameData[dropMethodKey] || [];
+                this.drop_my_weights = this.gameData[dropMyKey] || [];
+            }
+
+            loadEliminateData() {
+                if (!this.gameData) return;
+                
+                let prefix;
+                if (this.isSuperFreeGame) {
+                    prefix = 'SuperFree';
+                } else if (this.isFreeGame) {
+                    prefix = 'Free';
+                } else {
+                    prefix = '';
+                }
+                this.eliminate_trigger = this.gameData[`${prefix}Eliminate`] || null;
+                this.eliminate_time = this.gameData[`${prefix}EliminateTime`] || null;
+                this.eliminate_symbol = this.gameData[`${prefix}EliminateSymbol`] || null;
+            }
+
+            weightedRandom(weights) {
+                const total = weights.reduce((sum, w) => sum + w, 0);
+                let random = Math.random() * total;
+                for (let i = 0; i < weights.length; i++) {
+                    random -= weights[i];
+                    if (random <= 0) return i;
+                }
+                return weights.length - 1;
+            }
+
+            initializeBoard() {
+                if (!this.gameData) {
+                    console.error('Game data not loaded');
+                    alert('遊戲數據載入失敗，請確認 data.js 文件存在');
+                    return;
+                }
+                
+                const reelSet = this.selectReelByWeight();
+                const gameMode = this.isSuperFreeGame ? 'SuperFree' : (this.isFreeGame ? 'Free' : 'Base');
+                console.log(`%c🎰 初始版面: ${gameMode}Game Reel ${reelSet}`, 'color: #4CAF50; font-weight: bold');
+                
+                let prefix;
+                if (this.isSuperFreeGame) {
+                    prefix = 'SuperFreeGame';
+                } else if (this.isFreeGame) {
+                    prefix = 'FreeGame';
+                } else {
+                    prefix = 'baseGame';
+                }
+                const reelSymbols = this.gameData[`${prefix}Symbol${reelSet}`];
+                const reelWeights = this.gameData[`${prefix}SymbolWeight${reelSet}`];
+                const myWeights = this.gameData[`${prefix}MY${reelSet}`];
+
+                // 直向填充：每一列是一個輪帶
+                for (let col = 0; col < this.cols; col++) {
+                    const reelCol = reelSymbols[col];      // 第 col 列的輪帶
+                    const weightCol = reelWeights[col];    // 第 col 列的權重
+                    const startIdx = this.weightedRandom(weightCol);
+                    const reelLen = reelCol.length;
+
+                    // 從上到下填充這一列
+                    for (let row = 0; row < this.rows; row++) {
+                        let symbolValue = reelCol[(startIdx + row) % reelLen];
+                        // 將0轉換為C1 (1)
+                        this.board[row][col] = symbolValue === 0 ? 1 : symbolValue;
+                    }
+                }
+
+                // 轉換MY符號 (9,10,11 -> 隨機符號)
+                this.convertMySymbols(myWeights);
+
+                // 確保每行只有一個C1
+                this.fixC1();
+
+                // Base Game 才重置倍數，Free Game 和 SuperFreeGame 保留倍數
+                if (!this.isFreeGame && !this.isSuperFreeGame) {
+                    this.multipliers = Array(this.rows).fill(0).map(() => Array(this.cols).fill(1));
+                    this.eliminateTimes = Array(this.rows).fill(0).map(() => Array(this.cols).fill(0));
+                }
+            }
+
+            convertMySymbols(myWeights) {
+                const myTargets = [];
+                for (let myIdx = 0; myIdx < Math.min(3, myWeights.length); myIdx++) {
+                    // weightedRandom 返回符號 ID (0-8)
+                    myTargets[myIdx] = this.weightedRandom(myWeights[myIdx]);
+                }
+                
+                // myTargets 是符號 ID，顯示時：0=C1, 2-8=M1-M7
+                const displayNames = myTargets.map(id => id === 0 ? 'C1' : id === 1 ? '?' : `M${id-1}`);
+                console.log(`  🔄 MY轉換: MY1→${displayNames[0]}, MY2→${displayNames[1]}, MY3→${displayNames[2]}`);
+
+                for (let i = 0; i < this.rows; i++) {
+                    for (let j = 0; j < this.cols; j++) {
+                        const symbol = this.board[i][j];
+                        if (symbol >= 9 && symbol <= 11) {
+                            const myIdx = symbol - 9;
+                            if (myIdx < myTargets.length) {
+                                this.board[i][j] = myTargets[myIdx];
+                            }
+                        }
+                    }
+                }
+            }
+
+            fixC1() {
+                // 確保每條垂直轉軸（col）最多一個 C1
+                for (let col = 0; col < this.cols; col++) {
+                    let c1Count = 0;
+                    for (let row = 0; row < this.rows; row++) {
+                        if (this.board[row][col] === 1) {
+                            if (c1Count > 0) {
+                                this.board[row][col] = 9; // 轉換多餘的C1為MY1
+                            }
+                            c1Count++;
+                        }
+                    }
+                }
+            }
+
+            findConnected(row, col, visited) {
+                const symbol = this.board[row][col];
+                const queue = [[row, col]];
+                const result = [];
+                visited[row][col] = true;
+                const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+
+                while (queue.length > 0) {
+                    const [r, c] = queue.shift();
+                    result.push([r, c]);
+
+                    for (const [dr, dc] of directions) {
+                        const nr = r + dr;
+                        const nc = c + dc;
+                        if (nr >= 0 && nr < this.rows && nc >= 0 && nc < this.cols) {
+                            if (!visited[nr][nc] && this.board[nr][nc] === symbol) {
+                                visited[nr][nc] = true;
+                                queue.push([nr, nc]);
+                            }
+                        }
+                    }
+                }
+
+                return result;
+            }
+
+            findAllMatches() {
+                const visited = Array(this.rows).fill(0).map(() => Array(this.cols).fill(false));
+                const matches = [];
+
+                for (let i = 0; i < this.rows; i++) {
+                    for (let j = 0; j < this.cols; j++) {
+                        if (!visited[i][j] && this.board[i][j] !== 0) {
+                            const connected = this.findConnected(i, j, visited);
+                            if (connected.length >= 5) {
+                                matches.push({
+                                    symbol: this.board[i][j],
+                                    count: connected.length,
+                                    positions: connected
+                                });
+                            }
+                        }
+                    }
+                }
+
+                return matches;
+            }
+
+            getBaseScore(symbol, count) {
+                const linkpoint = this.gameData.linkpoint;
+                const symbolIdx = symbol - 2;
+                const countIdx = Math.min(count - 5, 10);
+
+                if (symbolIdx >= 0 && symbolIdx < linkpoint.length && 
+                    countIdx >= 0 && countIdx < linkpoint[0].length) {
+                    return linkpoint[symbolIdx][countIdx];
+                }
+                return 0;
+            }
+
+            calculateMultiplier(positions) {
+                const mults = positions.map(([r, c]) => this.multipliers[r][c]);
+                // 如果所有倍數都是 1，返回 1
+                if (mults.every(m => m === 1)) return 1;
+                // 否則只加總大於 1 的倍數（不包含 1）
+                return mults.filter(m => m > 1).reduce((sum, m) => sum + m, 0);
+            }
+
+            upgradeMultipliers(positions) {
+                for (const [row, col] of positions) {
+                    this.eliminateTimes[row][col]++;
+                    const times = this.eliminateTimes[row][col];
+
+                    if (times === 1) {
+                        if (this.isSuperFreeGame) {
+                            // SuperFreeGame 第1次消除：×2 → ×4
+                            const current = this.multipliers[row][col];
+                            if (current < 1024) {
+                                this.multipliers[row][col] = Math.min(current * 2, 1024);
+                            }
+                        } else {
+                            // 普通模式第1次消除：保持 ×1
+                            this.multipliers[row][col] = 1;
+                        }
+                    } else if (times >= 2) {
+                        const current = this.multipliers[row][col];
+                        if (current < 1024) {
+                            this.multipliers[row][col] = Math.min(current * 2, 1024);
+                        }
+                    }
+                }
+            }
+
+            removeSymbols(matches) {
+                const details = [];
+                let totalScore = 0;
+
+                for (const match of matches) {
+                    const baseScore = this.getBaseScore(match.symbol, match.count);
+                    const multiplier = this.calculateMultiplier(match.positions);
+                    const finalScore = baseScore * multiplier;
+
+                    this.upgradeMultipliers(match.positions);
+
+                    for (const [row, col] of match.positions) {
+                        this.board[row][col] = 0;
+                        // 清除固定標記
+                        if (this.fixedMask[row][col]) {
+                            this.fixedMask[row][col] = false;
+                            this.fixedCells.delete(`${row},${col}`);
+                            // 清除 2x2 塊記錄
+                            if (this.block2x2Map) {
+                                this.block2x2Map.delete(`${row},${col}`);
+                            }
+                        }
+                    }
+
+                    totalScore += finalScore;
+                    details.push({
+                        symbol: match.symbol === 1 ? 'C1' : `M${match.symbol - 1}`,
+                        count: match.count,
+                        baseScore,
+                        multiplier,
+                        finalScore
+                    });
+                }
+
+                return { totalScore, details };
+            }
+
+            dropSymbols() {
+                for (let col = 0; col < this.cols; col++) {
+                    const nonEmpty = [];
+
+                    // 從下往上收集非空且非固定的符號（不收集倍數）
+                    for (let row = this.rows - 1; row >= 0; row--) {
+                        if (!this.fixedMask[row][col] && this.board[row][col] !== 0) {
+                            nonEmpty.push(this.board[row][col]);
+                        }
+                    }
+
+                    // 從下往上填充，跳過固定格子（倍數保持在原位）
+                    let idx = 0;
+                    for (let row = this.rows - 1; row >= 0; row--) {
+                        if (!this.fixedMask[row][col]) {
+                            if (idx < nonEmpty.length) {
+                                this.board[row][col] = nonEmpty[idx];
+                                idx++;
+                            } else {
+                                this.board[row][col] = 0;
+                            }
+                        }
+                    }
+                }
+            }
+
+            fillEmptySpaces() {
+                // 每次填充都重新選擇 drop_set（1-6），根據當前消除次數
+                this.drop_set = this.selectDropByWeight(this.eliminate_count);
+                const gameMode = this.isSuperFreeGame ? 'SuperFree' : (this.isFreeGame ? 'Free' : 'Base');
+                console.log(`  📥 補充符號: ${gameMode}GameDrop ${this.drop_set} (eliminate_count=${this.eliminate_count})`);
+                this.loadDropData();
+                
+                if (!this.drop_symbol_table || this.drop_symbol_table.length === 0 || 
+                    !this.drop_method_weights || this.drop_method_weights.length === 0) {
+                    // 降級為簡單隨機填充
+                    for (let row = 0; row < this.rows; row++) {
+                        for (let col = 0; col < this.cols; col++) {
+                            if (this.board[row][col] === 0) {
+                                this.board[row][col] = this.symbols[Math.floor(Math.random() * this.symbols.length)];
+                                this.multipliers[row][col] = 1;
+                            }
+                        }
+                    }
+                    return;
+                }
+                
+                // 選擇填充方法
+                const dropMethod = this.weightedRandom(this.drop_method_weights);
+                
+                if (dropMethod === 0) {
+                    // 方法0：每行獨立選擇起始位置
+                    this.fillEmptyMethod0();
+                } else {
+                    // 方法1：統一使用position_idx
+                    this.fillEmptyMethod1();
+                }
+                
+                // 轉換填充後的MY符號
+                this.convertMySymbolsInFill();
+                
+                // 再次修正C1
+                this.fixC1();
+            }
+            
+            fillEmptyMethod0() {
+                // 方法0：每列各自根據權重選擇起始位置（直向填充）
+                const startPositions = [];
+                for (let col = 0; col < this.cols; col++) {
+                    const dropCol = this.drop_symbol_table[col];
+                    const dropWeightCol = this.drop_rweights[col];
+                    const dropLen = dropCol.length;
+                    
+                    // 每列獨立選擇起始位置
+                    const startIdx = this.weightedRandom(dropWeightCol);
+                    startPositions.push(startIdx);
+                    let offset = 0;
+                    
+                    // 從上到下填充這一列
+                    for (let row = 0; row < this.rows; row++) {
+                        if (this.board[row][col] === 0 && !this.fixedMask[row][col]) {
+                            // 從輪帶順序獲取符號
+                            let symbolValue = dropCol[(startIdx + offset) % dropLen];
+                            offset++;
+                            
+                            // 符號處理：0轉換為C1
+                            this.board[row][col] = symbolValue === 0 ? 1 : symbolValue;
+                            // multipliers保持不變
+                        }
+                    }
+                }
+                console.log(`    📍 方法0 - 各列起始位置: [${startPositions.join(',')}]`);
+            }
+            
+            fillEmptyMethod1() {
+                // 方法1：全盤統一選擇position_idx（直向填充）
+                const positionIdx = this.weightedRandom(this.drop_pweights);
+                console.log(`    📍 方法1 - 統一位置: [${positionIdx}]`);
+                
+                for (let col = 0; col < this.cols; col++) {
+                    const dropCol = this.drop_symbol_table[col];
+                    const dropLen = dropCol.length;
+                    let offset = 0;
+                    
+                    // 從上到下填充這一列
+                    for (let row = 0; row < this.rows; row++) {
+                        if (this.board[row][col] === 0 && !this.fixedMask[row][col]) {
+                            // 使用 positionIdx + offset
+                            let symbolValue = dropCol[(positionIdx + offset) % dropLen];
+                            offset++;
+                            
+                            // 符號處理：0轉換為C1
+                            this.board[row][col] = symbolValue === 0 ? 1 : symbolValue;
+                            // multipliers保持不變
+                        }
+                    }
+                }
+            }
+            
+            convertMySymbolsInFill() {
+                // 為每種MY符號選擇一個統一的轉換目標
+                const myTargets = [2, 2, 2]; // 預設為 M1 (symbol ID 2)
+                
+                if (this.drop_my_weights && this.drop_my_weights.length > 0) {
+                    const numMySymbols = Math.min(3, this.drop_my_weights.length);
+                    for (let myIdx = 0; myIdx < numMySymbols; myIdx++) {
+                        // weightedRandom 返回符號 ID (0-8)
+                        myTargets[myIdx] = this.weightedRandom(this.drop_my_weights[myIdx]);
+                    }
+                    // 如枟權重數據不足 3 個，用隨機值填充剩餘的
+                    for (let myIdx = numMySymbols; myIdx < 3; myIdx++) {
+                        myTargets[myIdx] = 2 + Math.floor(Math.random() * 7);
+                    }
+                    // myTargets 是符號 ID，顯示時：0=C1, 2-8=M1-M7
+                    const displayNames = myTargets.map(id => id === 0 ? 'C1' : id === 1 ? '?' : `M${id-1}`);
+                    console.log(`    🔄 Drop MY轉換: MY1→${displayNames[0]}, MY2→${displayNames[1]}, MY3→${displayNames[2]}`);
+                } else {
+                    // 如果沒有權重數據，使用隨機值
+                    myTargets[0] = 2 + Math.floor(Math.random() * 7); // MY1 -> 2-8
+                    myTargets[1] = 2 + Math.floor(Math.random() * 7); // MY2 -> 2-8
+                    myTargets[2] = 2 + Math.floor(Math.random() * 7); // MY3 -> 2-8
+                }
+                
+                // 轉換所有MY符號
+                for (let i = 0; i < this.rows; i++) {
+                    for (let j = 0; j < this.cols; j++) {
+                        const symbol = this.board[i][j];
+                        if (symbol >= 9 && symbol <= 11) {
+                            const myIdx = symbol - 9;
+                            if (myIdx < myTargets.length && myTargets[myIdx] >= 0 && myTargets[myIdx] <= 8) {
+                                this.board[i][j] = myTargets[myIdx];
+                            } else {
+                                // 強制轉換為隨機符號
+                                this.board[i][j] = 2 + Math.floor(Math.random() * 7);
+                                console.warn(`MY${myIdx + 1} conversion failed, using random symbol`);
+                            }
+                        }
+                    }
+                }
+            }
+
+            renderBoard() {
+                // 最後一道防線：確保沒有 MY 符號
+                for (let i = 0; i < this.rows; i++) {
+                    for (let j = 0; j < this.cols; j++) {
+                        if (this.board[i][j] >= 9 && this.board[i][j] <= 11) {
+                            console.warn(`Found unconverted MY symbol at [${i},${j}]: ${this.board[i][j]}, converting...`);
+                            this.board[i][j] = 2 + Math.floor(Math.random() * 7);
+                        }
+                    }
+                }
+                
+                const boardElement = document.getElementById('gameBoard');
+                boardElement.innerHTML = '';
+                
+                // 檢測哪些格子是 2x2 塊的一部分（但不是左上角）
+                const skipCells = new Set();
+                if (this.block2x2Map) {
+                    for (const [key, symbolId] of this.block2x2Map.entries()) {
+                        const [startRow, startCol] = key.split(',').map(Number);
+                        // 檢查 2x2 塊是否仍然存在
+                        let blockExists = true;
+                        for (let dr = 0; dr < 2; dr++) {
+                            for (let dc = 0; dc < 2; dc++) {
+                                const r = startRow + dr;
+                                const c = startCol + dc;
+                                if (r >= this.rows || c >= this.cols || 
+                                    this.board[r][c] !== symbolId || 
+                                    !this.fixedMask[r][c]) {
+                                    blockExists = false;
+                                    break;
+                                }
+                            }
+                            if (!blockExists) break;
+                        }
+                        
+                        if (blockExists) {
+                            // 標記右上、左下、右下三個格子為隱藏
+                            skipCells.add(`${startRow},${startCol + 1}`);
+                            skipCells.add(`${startRow + 1},${startCol}`);
+                            skipCells.add(`${startRow + 1},${startCol + 1}`);
+                        } else {
+                            // 2x2 塊已被破壞，清除記錄
+                            this.block2x2Map.delete(key);
+                        }
+                    }
+                }
+
+                for (let row = 0; row < this.rows; row++) {
+                    for (let col = 0; col < this.cols; col++) {
+                        const cellKey = `${row},${col}`;
+                        
+                        // 如果是 2x2 塊的非左上角部分，跳過（由 grid 布局處理）
+                        if (skipCells.has(cellKey)) {
+                            continue;
+                        }
+                        
+                        const cell = document.createElement('div');
+                        cell.className = 'cell';
+                        cell.dataset.row = row;
+                        cell.dataset.col = col;
+                        
+                        // 根據消除次數添加背景顏色
+                        const elimTimes = this.eliminateTimes[row][col];
+                        if (elimTimes === 1) {
+                            cell.classList.add('eliminated-1');
+                        } else if (elimTimes === 2) {
+                            cell.classList.add('eliminated-2');
+                        } else if (elimTimes === 3) {
+                            cell.classList.add('eliminated-3');
+                        } else if (elimTimes >= 4) {
+                            cell.classList.add('eliminated-4plus');
+                        }
+                        
+                        // 檢查是否是 2x2 塊的左上角
+                        const is2x2TopLeft = this.block2x2Map && this.block2x2Map.has(cellKey);
+                        
+                        if (is2x2TopLeft) {
+                            // 2x2 大符號
+                            cell.classList.add('block-2x2', 'fixed');
+                        } else if (this.fixedMask[row][col]) {
+                            // 一般固定格子
+                            cell.classList.add('fixed');
+                        }
+
+                        const symbolId = this.board[row][col];
+                        if (symbolId !== 0) {
+                            const img = document.createElement('img');
+                            img.src = this.getSymbolImage(symbolId);
+                            img.alt = symbolId === 1 ? 'C1' : `M${symbolId - 1}`;
+                            cell.appendChild(img);
+
+                            const mult = this.multipliers[row][col];
+                            if (mult > 1 && !is2x2TopLeft) {
+                                const multDiv = document.createElement('div');
+                                multDiv.className = 'multiplier';
+                                multDiv.textContent = `x${mult}`;
+                                cell.appendChild(multDiv);
+                            }
+                        }
+
+                        boardElement.appendChild(cell);
+                    }
+                }
+            }
+
+            highlightMatches(matches) {
+                return new Promise(resolve => {
+                    for (const match of matches) {
+                        for (const [row, col] of match.positions) {
+                            const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+                            if (cell) cell.classList.add('matched');
+                        }
+                    }
+                    setTimeout(() => {
+                        for (const match of matches) {
+                            for (const [row, col] of match.positions) {
+                                const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+                                if (cell) cell.classList.remove('matched');
+                            }
+                        }
+                        resolve();
+                    }, 600);
+                });
+            }
+
+            tryEliminateFeature() {
+                if (!this.eliminate_trigger || !this.eliminate_time || !this.eliminate_symbol) {
+                    return false;
+                }
+
+                // 根據消除次數選擇列索引
+                let colIdx;
+                if (this.eliminate_count === 0) {
+                    colIdx = 0;
+                } else if (this.eliminate_count >= 1 && this.eliminate_count <= 3) {
+                    colIdx = 1;
+                } else if (this.eliminate_count >= 4 && this.eliminate_count <= 6) {
+                    colIdx = 2;
+                } else if (this.eliminate_count >= 7 && this.eliminate_count <= 9) {
+                    colIdx = 3;
+                } else {
+                    colIdx = 4;
+                }
+
+                // 檢查列索引是否有效
+                if (colIdx >= this.eliminate_trigger[0].length) {
+                    return false;
+                }
+
+                // 取得觸發和不觸發的權重（2選1）
+                const triggerWeight = this.eliminate_trigger[0][colIdx];    // 第0行 = 觸發
+                const notTriggerWeight = this.eliminate_trigger[1][colIdx]; // 第1行 = 不觸發
+                
+                // 判斷是否觸發
+                const choice = this.weightedRandom([triggerWeight, notTriggerWeight]);
+                if (choice !== 0) {
+                    return false;  // 選到不觸發
+                }
+
+                // 決定放幾個 2x2 塊
+                const numBlocks = this.weightedRandom(this.eliminate_time) + 1;
+
+                let placedBlocks = 0;
+                const maxAttempts = 100;
+                let attempts = 0;
+                const occupiedCells = new Set([...this.fixedCells]);
+
+                while (placedBlocks < numBlocks && attempts < maxAttempts) {
+                    attempts++;
+
+                    // 隨機選擇起始位置 (0-5, 0-5) 以容納 2x2
+                    const startRow = Math.floor(Math.random() * (this.rows - 1));
+                    const startCol = Math.floor(Math.random() * (this.cols - 1));
+
+                    // 檢查 2x2 區域
+                    const blockCells = [];
+                    for (let dr = 0; dr < 2; dr++) {
+                        for (let dc = 0; dc < 2; dc++) {
+                            blockCells.push([startRow + dr, startCol + dc]);
+                        }
+                    }
+
+                    // 檢查是否有重疊
+                    const hasOverlap = blockCells.some(([r, c]) => 
+                        occupiedCells.has(`${r},${c}`)
+                    );
+                    if (hasOverlap) continue;
+
+                    // 檢查是否有 C1
+                    const hasC1 = blockCells.some(([r, c]) => this.board[r][c] === 1);
+                    if (hasC1) continue;
+
+                    // 選擇符號
+                    const symbolId = this.weightedRandom(this.eliminate_symbol);
+
+                    // 第一個塊必須與版面上已有的相同符號相鄰
+                    if (placedBlocks === 0) {
+                        const adjacentPositions = [
+                            [startRow - 1, startCol], [startRow - 1, startCol + 1],
+                            [startRow + 2, startCol], [startRow + 2, startCol + 1],
+                            [startRow, startCol - 1], [startRow + 1, startCol - 1],
+                            [startRow, startCol + 2], [startRow + 1, startCol + 2]
+                        ];
+
+                        let hasAdjacent = false;
+                        for (const [nr, nc] of adjacentPositions) {
+                            if (nr >= 0 && nr < this.rows && nc >= 0 && nc < this.cols &&
+                                this.board[nr][nc] === symbolId) {
+                                hasAdjacent = true;
+                                break;
+                            }
+                        }
+
+                        if (!hasAdjacent) continue;
+                    }
+
+                    // 放置 2x2 塊
+                    for (const [r, c] of blockCells) {
+                        this.board[r][c] = symbolId;
+                        occupiedCells.add(`${r},${c}`);
+                        this.fixedCells.add(`${r},${c}`);
+                        this.fixedMask[r][c] = true;
+                    }
+                    
+                    // 記錄 2x2 塊的左上角，用於渲染
+                    if (!this.block2x2Map) this.block2x2Map = new Map();
+                    this.block2x2Map.set(`${startRow},${startCol}`, symbolId);
+
+                    placedBlocks++;
+                }
+
+                return placedBlocks > 0;
+            }
+
+            async processCascades() {
+                let cascadeCount = 0;
+                let totalScore = 0;
+                const allDetails = [];
+
+                while (true) {
+                    const matches = this.findAllMatches();
+                    if (matches.length === 0) {
+                        // 嘗試觸發 Eliminate
+                        if (this.tryEliminateFeature()) {
+                            this.addLog('🎲 <span style="color: #ff6b6b;">Eliminate 特色觸發！</span>');
+                            this.renderBoard();
+                            await this.sleep(800);
+                            continue;
+                        }
+                        break;
+                    }
+
+                    cascadeCount++;
+                    this.eliminate_count++; // 追蹤消除次數
+                    await this.highlightMatches(matches);
+
+                    const { totalScore: score, details } = this.removeSymbols(matches);
+                    totalScore += score;
+                    allDetails.push({ cascade: cascadeCount, matches: details });
+
+                    this.renderBoard();
+                    await this.sleep(300);
+
+                    this.dropSymbols();
+                    this.renderBoard();
+                    await this.sleep(400);
+
+                    this.fillEmptySpaces();
+                    this.renderBoard();
+                    await this.sleep(400);
+                }
+
+                return { cascadeCount, totalScore, allDetails };
+            }
+
+            sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+
+            addLog(message) {
+                const logPanel = document.getElementById('logPanel');
+                const entry = document.createElement('div');
+                entry.className = 'log-entry';
+                entry.innerHTML = message;
+                logPanel.insertBefore(entry, logPanel.firstChild);
+
+                // 保持最多20條記錄
+                while (logPanel.children.length > 20) {
+                    logPanel.removeChild(logPanel.lastChild);
+                }
+            }
+
+            updateUI(roundScore, cascadeCount) {
+                document.getElementById('totalScore').textContent = this.currentModeScore;
+                document.getElementById('roundScore').textContent = roundScore;
+                document.getElementById('cascadeCount').textContent = cascadeCount;
+                
+                // 更新模式標籤
+                let modeText = 'BASE GAME';
+                if (this.isSuperFreeGame) {
+                    modeText = 'SUPER FREE GAME';
+                } else if (this.isFreeGame) {
+                    modeText = 'FREE GAME';
+                }
+                document.getElementById('modeLabel').textContent = modeText;
+            }
+
+            async spin(keepMultipliers = false) {
+                if (this.isSpinning) return;
+                this.isSpinning = true;
+                
+                document.getElementById('spinBtn').disabled = true;
+                document.getElementById('freeGameBtn').disabled = true;
+
+                // 重置消除次數和固定格子
+                this.eliminate_count = 0;
+                this.fixedCells.clear();
+                if (this.block2x2Map) this.block2x2Map.clear();
+                for (let i = 0; i < this.rows; i++) {
+                    for (let j = 0; j < this.cols; j++) {
+                        this.fixedMask[i][j] = false;
+                    }
+                }
+                
+                // 每次 spin 重新選擇 drop_set（對應模擬程式的邏輯）
+                this.drop_set = this.selectDropByWeight(0);  // eliminate_count=0
+                
+                // 重新載入 Drop 和 Eliminate 數據
+                this.loadDropData();
+                this.loadEliminateData();
+                
+                // 初始化版面（會重新選擇 reel_set）
+                this.initializeBoard();
+                this.renderBoard();
+                await this.sleep(500);
+
+                const { cascadeCount, totalScore, allDetails } = await this.processCascades();
+
+                this.totalScore += totalScore;
+                this.currentModeScore += totalScore;
+                if (this.isFreeGame || this.isSuperFreeGame) {
+                    this.freeGameTotalScore += totalScore;
+                }
+                this.updateUI(totalScore, cascadeCount);
+
+                // 添加日誌
+                this.addLog(`<span class="score-highlight">總分: ${totalScore}</span> | Cascades: ${cascadeCount}`);
+                for (const detail of allDetails) {
+                    for (const match of detail.matches) {
+                        // 獲取該組合的詳細倍數信息
+                        const multDetails = match.positions ? 
+                            match.positions.map(([r, c]) => this.multipliers[r][c]).filter(m => m > 1) : [];
+                        const multInfo = multDetails.length > 0 ? 
+                            ` (倍數: ${multDetails.map(m => `x${m}`).join('+')})` : '';
+                        
+                        this.addLog(`Cascade ${detail.cascade}: <span class="match-detail">${match.symbol} x${match.count}</span> = ${match.baseScore} × ${match.multiplier}${multInfo} = ${match.finalScore}`);
+                    }
+                }
+                
+                // Free Game / SuperFreeGame 處理
+                if (this.isFreeGame || this.isSuperFreeGame) {
+                    // 檢查 Retrigger
+                    const c1Count = this.countC1();
+                    const retriggerMap = {3: 10, 4: 12, 5: 15, 6: 20, 7: 30};
+                    if (retriggerMap[c1Count]) {
+                        this.remainingSpins += retriggerMap[c1Count];
+                        this.addLog(`🎉 <span style="color: #ff6b6b; font-weight: bold;">RETRIGGER! ${c1Count} 個 C1 = +${retriggerMap[c1Count]} SPINS</span>`);
+                    }
+                    
+                    // 更新剩餘 spin
+                    this.remainingSpins--;
+                    document.getElementById('remainingSpins').textContent = this.remainingSpins;
+                    
+                    if (this.remainingSpins > 0) {
+                        // 等待手動點擊繼續 Free Game
+                        document.getElementById('spinBtn').disabled = false;
+                        document.getElementById('freeGameBtn').disabled = false;
+                        this.isSpinning = false;
+                        return;
+                    } else {
+                        // Free Game 結束
+                        this.endFreeGame();
+                    }
+                }
+
+                document.getElementById('spinBtn').disabled = false;
+                document.getElementById('freeGameBtn').disabled = false;
+                this.isSpinning = false;
+            }
+            
+            countC1() {
+                let count = 0;
+                for (let i = 0; i < this.rows; i++) {
+                    for (let j = 0; j < this.cols; j++) {
+                        if (this.board[i][j] === 1) count++;
+                    }
+                }
+                return count;
+            }
+            
+            async startFreeGame(initialSpins = 10) {
+                if (this.isSpinning) return;
+                
+                this.isFreeGame = true;
+                this.remainingSpins = initialSpins;
+                this.freeGameTotalScore = 0;
+                this.currentModeScore = 0;  // 重置模式分數
+                
+                // 初始化 Free Game 倍數（從 1 開始）
+                this.multipliers = Array(this.rows).fill(0).map(() => Array(this.cols).fill(1));
+                this.eliminateTimes = Array(this.rows).fill(0).map(() => Array(this.cols).fill(0));
+                
+                // 顯示 Free Game 信息
+                document.getElementById('freeGameInfo').style.display = 'block';
+                document.getElementById('remainingSpins').textContent = this.remainingSpins;
+                
+                this.addLog(`🎉 <span style="color: #ff6b6b; font-size: 1.2em; font-weight: bold;">FREE GAME START! ${initialSpins} SPINS</span>`);
+                
+                await this.sleep(1000);
+                this.spin(true);
+            }
+            
+            async startSuperFreeGame(initialSpins = 10) {
+                if (this.isSpinning) return;
+                
+                this.isSuperFreeGame = true;
+                this.isFreeGame = false;
+                this.remainingSpins = initialSpins;
+                this.freeGameTotalScore = 0;
+                this.currentModeScore = 0;  // 重置模式分數
+                
+                // 初始化 SuperFreeGame 倍數（從 2 開始）
+                this.multipliers = Array(this.rows).fill(0).map(() => Array(this.cols).fill(2));
+                this.eliminateTimes = Array(this.rows).fill(0).map(() => Array(this.cols).fill(0));
+                
+                // 顯示 Free Game 信息（共用界面）
+                document.getElementById('freeGameInfo').style.display = 'block';
+                document.getElementById('freeGameInfo').style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
+                document.getElementById('remainingSpins').textContent = this.remainingSpins;
+                
+                this.addLog(`⭐ <span style="color: #667eea; font-size: 1.2em; font-weight: bold;">SUPER FREE GAME START! ${initialSpins} SPINS (初始倍數 ×2)</span>`);
+                
+                await this.sleep(1000);
+                this.spin(true);
+            }
+            
+            endFreeGame() {
+                const gameMode = this.isSuperFreeGame ? 'SUPER FREE GAME' : 'FREE GAME';
+                const color = this.isSuperFreeGame ? '#667eea' : '#ff6b6b';
+                this.addLog(`🎆 <span style="color: ${color}; font-size: 1.2em; font-weight: bold;">${gameMode} END! 總獲得: ${this.freeGameTotalScore}</span>`);
+                
+                // 隱藏 Free Game 信息
+                document.getElementById('freeGameInfo').style.display = 'none';
+                
+                // 重置為 Base Game 模式
+                this.isFreeGame = false;
+                this.isSuperFreeGame = false;
+                this.currentModeScore = 0;  // 重置模式分數
+                this.multipliers = Array(this.rows).fill(0).map(() => Array(this.cols).fill(1));
+                this.eliminateTimes = Array(this.rows).fill(0).map(() => Array(this.cols).fill(0));
+                
+                // 重新載入 Base Game 數據
+                this.loadDropData();
+                this.loadEliminateData();
+            }
+
+            async autoSpin(times) {
+                if (this.isSpinning) return;
+                
+                for (let i = 0; i < times; i++) {
+                    if (!this.isSpinning) {
+                        this.addLog(`=== AUTO SPIN ${i + 1}/${times} ===`);
+                        await this.spin();
+                        await this.sleep(500);
+                    }
+                }
+            }
+        }
+
+        // 初始化遊戲
+        let game;
+        window.addEventListener('DOMContentLoaded', () => {
+            game = new SugarRushGame();
+
+            document.getElementById('spinBtn').addEventListener('click', () => {
+                // 如果在 Free Game 或 SuperFreeGame 中，保留倍數
+                game.spin(game.isFreeGame || game.isSuperFreeGame);
+            });
+
+            document.getElementById('freeGameBtn').addEventListener('click', () => {
+                game.startFreeGame(10);
+            });
+
+            document.getElementById('superFreeGameBtn').addEventListener('click', () => {
+                game.startSuperFreeGame(10);
+            });
+        });
+    </script>
+</body>
+</html>

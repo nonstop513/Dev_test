@@ -1,0 +1,1391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>財富大盛 Demo</title>
+    <style>
+        .right-panel {
+            position: absolute;
+            top: 340px;
+            left: calc(50% + 500px);  /* 調整位置，讓按鈕出現在背景圖片右側 */
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .right-panel .button {
+            width: 200px;
+            padding: 15px 20px;
+            font-size: 1.2em;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .right-panel .button:hover {
+            background-color: #0056b3;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+        }
+        .background {
+            position: absolute;
+            top: 275px;
+            left: 50%;
+            transform: translateX(-50%) scale(1.55);
+            width: 566px;
+            height: 367px;
+            background-image: url('picture_base/FreeReel_resize.png');
+            background-size: cover;
+            z-index: -2;  /* 背景放到最底層 */
+        }
+        .background1 {
+            position: absolute;
+            top: 298px;
+            left: 50%;
+            transform: translateX(-50%) scale(1.26);
+            width: 566px;
+            height: 367px;
+            background-image: url('picture_base/reel.png');  /* 第二張背景圖 */
+            background-size: cover;
+            z-index: -1;  /* 在第一層背景上方 */
+        }
+        .slot-container {
+            display: inline-block;
+            position: absolute;
+            top: 275px;
+            left: 50%;
+            transform: translateX(-50%) scale(1.45);
+            width: fit-content; /* 自动适配子元素 */
+            height: fit-content;
+            padding: 20px;
+            z-index: 1;
+        }
+        
+        .slot-row {
+            display: flex;
+            justify-content: center;
+            margin: 2px 0;
+            transform: translateY(30px);
+        }
+        .cell-container {
+            display: flex;
+            flex-direction: column;
+            position: absolute;
+            justify-content: flex-start;  /* 向左對齊 */
+            bottom: -17px;  /* 初始符號貼齊底部 */
+            width: 100%;  
+            height: auto; 
+        }
+
+        .slot-cell {
+            width: 95px;
+            height: 95px;
+            margin: 0 0.5px;
+            border: 2px solid transparent;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5em;
+            background-color: transparent;
+            border-radius: 5px;
+            background-size: cover;
+            flex-direction: column-reverse;  /* 让子元素垂直排列 */
+            border: 2px solid transparent; /* 添加黑色边框 */
+            box-sizing: border-box; /* 确保边框不会影响格子大小 */
+            overflow: hidden;
+            
+
+        }
+        .overlay-break-frame-container {
+    position: absolute;
+    width: calc(100% - 39.5px); /* 裁掉寬度的 10px */
+    height: calc(100% - 42px); /* 裁掉高度的 10px */
+    pointer-events: none;
+    z-index: 9; /* ✅ 确保它在 `slot-cell` 之上 */
+    transform: translateY(30px);
+}
+
+.overlay-break-frame {
+    position: absolute;
+    width: 200px; /* ✅ 让它比 `slot-cell` 大，实现破框 */
+    height: 200px;
+    background-repeat: no-repeat;
+    background-position: center;
+    pointer-events: none;
+    z-index: 9;
+    transition: transform 0.5s ease-in-out;
+    transform-origin: center center; /* ✅ 确保缩放从中心点开始 */
+}
+        .reel-container {
+            position: absolute;  /* 絕對定位 */
+            top: 310px;
+            left: 50%;
+            transform: translateX(-50%) scale(1.37);
+            display: flex;
+            justify-content: center;
+            gap: 0px;
+            z-index: 0;  /* 滾輪在背景之上 */
+            
+        }
+
+        .button-container {
+            margin-top: 650px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .button {
+            padding: 10px 20px;
+            font-size: 1.2em;
+            border: none;
+            border-radius: 5px;
+            background-color: #28a745;
+            color: white;
+            cursor: pointer;
+        }
+
+        .button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .multiplier-result {
+            font-size: 2em;
+            font-weight: bold;
+            margin-top: 20px;
+            margin-bottom: 5px;
+            color: #333;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3);
+        }
+        .selected {
+            border: 3px solid #007bff;
+            background-color: #cce5ff;
+        }
+
+        .countdown-container {
+            margin-top: 10px;
+            font-size: 1.5em;
+        }
+        .score-item {
+        font-size: 1.8em;
+        font-weight: bold;
+        color: #333;
+        text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+        margin-left: 20px;  /* 讓分數顯示在按鈕右側 */
+        display: inline-block;
+        vertical-align: middle;
+        }
+        .score-panel {
+            position: absolute;
+            top: 50%;  /* 垂直居中 */
+            left: calc(50% - 950px);  /* 在背景左側，根據背景尺寸調整 */
+            transform: translateY(-50%);  /* 使其垂直居中 */
+            width: 500px;
+            color: white;
+            font-size: 1.2em;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: left;
+            box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3);
+            line-height: 1.8;  /* 增加行距 */
+        }
+        .hidden {
+            visibility: hidden;  /* 使用 visibility 而非 display，保留空間 */
+        }
+        .feature-play {
+            min-height: 20px;  /* 根據實際按鈕高度調整，確保區域不會塌陷 */
+        }
+        /* BASE GAME 滾輪容器 */
+
+        
+        .reel {
+            width: 100px;
+            height: 337px;
+            /*background-color: #f0f0f0;*/
+            /*border: 2px solid #aaa;*/
+            border-radius: 10px;
+            overflow: hidden;
+            flex-direction: column-reverse;  /* 符號由下往上堆疊 */
+            align-items: center;
+            position: relative;  /* 確保滾輪內符號相對滾輪位置 */
+            
+        }
+        .reel-inner {
+            display: flex;
+            flex-direction: column;
+            position: absolute;
+            justify-content: flex-start;  /* 向左對齊 */
+            bottom: 0;  /* 初始符號貼齊底部 */
+            width: 100%;  /* 增加滾輪內部寬度，使符號不被裁切 */
+        }
+        .reel-symbol {
+            display: block; /* 让 div 独占整行 */
+            width: 100%;  /* 圖片寬度填滿滾輪 */
+            height: auto;  /* 保持原始比例 */
+            background-size: 100% auto;  /* 圖片寬度100%，高度自動 */
+            background-repeat: no-repeat;
+        }
+        .reel1-symbol {
+            display: block; /* 让 div 独占整行 */
+            height: auto;  /* 保持原始比例 */
+            background-size: 100% auto;  /* 圖片寬度100%，高度自動 */
+            background-position: center center;
+            background-repeat: no-repeat;
+        }
+
+.countdown-container {
+    position: absolute; /* 使用绝对定位 */
+    top: 20%; /* 调整到屏幕中间偏上的位置 */
+    left: 50%; /* 水平居中 */
+    transform: translate(-50%, -50%); /* 确保在正中央 */
+    display: flex;
+    justify-content: center;
+    gap: 0px; /* 倒计时框之间的间距 */
+    z-index: 999; /* 保证它显示在其他内容之上 */
+}
+
+.count-box {
+    border-radius: 50%; /* 设置为圆形 */
+    width: 80px;
+    height: 80px;
+    background-color: #333; /* 默认暗色 */
+    border: 2px solid black; /* 外围黑线 */
+    transition: background-color 0.3s;
+}
+
+.count-box.active {
+    background-color: #ffc107; /* 点亮颜色 */
+}
+.spin-options-container {
+    position: absolute;
+    bottom: 60px;
+    right: 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.spin-options-row {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 10px;
+}
+
+.spin-options-row .button {
+    margin: 0 5px;
+    padding: 15px 30px;
+    font-size: 20px;
+    cursor: pointer;
+}
+.spin-options-row .button.active {
+    border-color: #f39c12;
+    box-shadow: 0 0 15px rgba(243, 156, 18, 0.8), 0 0 30px rgba(243, 156, 18, 0.5);
+    transform: scale(1.1);
+}
+
+.spin-status {
+    margin-top: 10px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #333;
+}
+    </style>
+</head>
+<body>
+    <div class="score-panel" id="scorePanel">
+        <div class="score-item">
+            <span>Total Score:</span>
+            <span id="totalScoreDisplay">10000</span>
+        </div>
+        <div class="score-item">
+            <span>Hit Rate:</span>
+            <span id="hitRateDisplay">(0/0) 0%</span>
+        </div>
+        <div class="score-item">
+            <span>F-hit:</span>
+            <span id="Feature-hit">0/0/0/0/0/0/0 : 0</span>
+        </div>
+        <div class="score-item">
+            <span>RTP:</span>
+            <span id="RTPDisplay">0%</span>
+        </div>
+    </div>
+    <div class="right-panel">
+        <button class="button" onclick="switchMode('hold_spin')">Hold & Spin</button>
+        <button class="button" onclick="switchMode('base_game')">Base Game</button>
+    </div>
+    <div class="left-panel mode-buttons">
+        <div class="feature-play">
+        <button class="button" onclick="setGameMode('green', this)">收集</button>
+        <button class="button" onclick="setGameMode('Red', this)">乘倍</button>
+        <button class="button" onclick="setGameMode('Blue', this)">神秘</button>
+        <button class="button" onclick="setGameMode('g_b', this)">收集 & 神秘</button>
+        <button class="button" onclick="setGameMode('g_r', this)">收集 & 乘倍</button>
+        <button class="button" onclick="setGameMode('r_b', this)">乘倍 & 神秘</button>
+        <button class="button" onclick="setGameMode('g_r_b', this)">三特色</button>
+        </div>
+        <div class="bet-settings">
+        <label for="dimValue">Den Value:</label>
+        <select id="dimValue" onchange="updateBet()">
+            <option value="1">1</option>
+            <option value="0.5">0.5</option>
+            <option value="0.2">0.2</option>
+            <option value="0.1">0.1</option>
+            <option value="0.05">0.05</option>        
+        </select>
+        <label for="betMultiplier">Bet Multiplier:</label>
+        <select id="betMultiplier" onchange="updateBet()">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="6">6</option>
+            <option value="10">10</option>
+            <option value="15">15</option>
+        </select>
+        <label for="gameMode">Game Mode:</label>
+        <select id="gameMode" onchange="updateBet()">
+            <option value="1">手工</option>
+            <option value="0">基因演算法</option>
+            
+        </select>
+    </div>
+
+    <div class="game-container">
+        <div class="multiplier-result">
+            Total Bet: <span id="totalBetDisplay">50</span>
+        </div>
+        <div id="countdownContainer" class="countdown-container">
+            <div class="count-box" id="box1"></div>
+            <div class="count-box" id="box2"></div>
+            <div class="count-box" id="box3"></div>
+        </div>
+        <div class="background"></div>
+        <div class="background1"></div>
+        <div class="slot-container" id="holdSpinContainer">
+            <div class="overlay-break-frame-container"></div>
+            <div class="slot-row" id="row1">
+                <div class="slot-cell" data-id="0"><div class="cell-container"></div></div>
+                <div class="slot-cell" data-id="1"><div class="cell-container"></div></div>
+                <div class="slot-cell" data-id="2"><div class="cell-container"></div></div>
+                <div class="slot-cell" data-id="3"><div class="cell-container"></div></div>
+                <div class="slot-cell" data-id="4"><div class="cell-container"></div></div>
+            </div>
+            <div class="slot-row" id="row2">
+                <div class="slot-cell" data-id="5"><div class="cell-container"></div></div>
+                <div class="slot-cell" data-id="6"><div class="cell-container"></div></div>
+                <div class="slot-cell" data-id="7"><div class="cell-container"></div></div>
+                <div class="slot-cell" data-id="8"><div class="cell-container"></div></div>
+                <div class="slot-cell" data-id="9"><div class="cell-container"></div></div>
+            </div>
+            <div class="slot-row" id="row3">
+                <div class="slot-cell" data-id="10"><div class="cell-container"></div></div>
+                <div class="slot-cell" data-id="11"><div class="cell-container"></div></div>
+                <div class="slot-cell" data-id="12"><div class="cell-container"></div></div>
+                <div class="slot-cell" data-id="13"><div class="cell-container"></div></div>
+                <div class="slot-cell" data-id="14"><div class="cell-container"></div></div>
+            </div>
+        </div>
+        <div class="reel-container hidden" id="baseGameContainer">
+            <div class="reel" data-reel="0">
+                <div class="reel-inner"></div>
+            </div>
+            <div class="reel" data-reel="1">
+                <div class="reel-inner"></div>
+            </div>
+            <div class="reel" data-reel="2">
+                <div class="reel-inner"></div>
+            </div>
+            <div class="reel" data-reel="3">
+                <div class="reel-inner"></div>
+            </div>
+            <div class="reel" data-reel="4">
+                <div class="reel-inner"></div>
+            </div>
+        </div>
+        <div class="button-container">
+            <button class="button" id="spinButton">Spin</button>
+            <button class="button" id="resetButton">New Game</button>
+            <div class="score-wrapper">
+                <div class="score-item">
+                    <span>Score:</span>
+                    <span id="multiplierDisplay">0</span>
+                </div>
+                <div class="score-item">
+                    <span>Multiple:</span>
+                    <span id="scoreDisplay">0</span>
+                </div>
+
+        </div>
+        <div class="spin-options-container">
+            <div class="spin-options-row">
+                <button class="button" id="fastSpinButton" onclick="setSpinSpeed('fast')">Fast Spin</button>
+                <button class="button" id="slowSpinButton" onclick="setSpinSpeed('slow')">Slow Spin</button>
+            </div>
+            <div class="spin-options-row">
+                <button class="button" id="autoSpinButton" onclick="toggleAutoSpin()">Auto Spin</button>
+            </div>
+        </div>
+    </div>
+    <script src="data.js"></script>
+    <script src="gameLogic.js"></script>
+    <script>
+let reelData = [];  // 存放 Base Game 滾輪數據
+let longreelData = [];
+let baseGameScore = 0;  // 存放 Base Game 當前得分
+let winSpins = 0;     // 有贏分的 spin 次數
+let randomPositions = [];
+let mainGameMode = 'base_game';  // 預設大玩法模式 (Hold & Spin 或 Base Game)        
+let gameMode = [];  // 遊戲模式保持全局變數，避免被重製
+let firstSequence = []
+let totalSequence = [];
+let displayOrder = [];
+let win = [];
+let scoreVector = [];
+let originalScores = [];
+let spinIndex = 0;
+let countdown = 3;
+let slotCells;
+let filledPositions = [];
+let totalScore = 10000;
+let hits = 0;
+let totalSpins = 0;
+let bet = 50
+let RTPbet = 0;
+let featuregame = 0
+let Fhit = [0,0,0,0,0,0,0]
+let isSpinning = false; // 是否正在執行滾輪動畫
+let isSkipping = false; // 是否跳過動畫
+let spinLengths = [10, 15, 20, 25, 30];  // 每條滾輪滾動長度不同
+let baseDuration = [];  // 基礎滾動時間（以最大滾動距離計算）
+const symbolPool = ['M1', 'M2', 'M3', 'M4', 'M5', 'A', 'K', 'Q', 'J', 'TE','WW'];
+let isSpaceLocked = false; // 空格键锁定标志
+let spaceLockTimer = null; // 定时器变量
+let autoSpinActive = false;
+let autoSpinInterval = null;
+function setSpinSpeed(speed) {
+    const fastButton = document.getElementById('fastSpinButton');
+    const slowButton = document.getElementById('slowSpinButton');
+    if (speed === 'fast') {
+        spinLengths = [8, 8, 8, 8, 8];
+        baseDuration = 450;
+        console.log('Fast Spin activated', spinLengths);
+        fastButton.classList.add('active');
+        slowButton.classList.remove('active');
+    } else if (speed === 'slow') {
+        spinLengths = [10, 15, 20, 25, 30];
+        baseDuration = 1500;
+        console.log('Slow Spin activated', spinLengths);
+        slowButton.classList.add('active');
+        fastButton.classList.remove('active');
+    }
+}
+function toggleAutoSpin() {
+    const autoSpinButton = document.getElementById('autoSpinButton');
+    autoSpinActive = !autoSpinActive;
+
+    if (autoSpinActive) {
+        console.log('Auto Spin activated');
+        autoSpinButton.classList.add('active');
+
+        const interval = spinLengths[0] === 8 ? baseDuration*1.1 : baseDuration*1.1;
+
+        autoSpinInterval = setInterval(() => {
+            console.log('Auto Spin triggered');
+            const event = new KeyboardEvent('keydown', { code: 'Space', bubbles: true });
+            Object.defineProperty(event, 'isAutoSpin', { value: true }); // 添加自定义属性
+            document.dispatchEvent(event);
+        }, interval);
+    } else {
+        console.log('Auto Spin deactivated');
+        autoSpinButton.classList.remove('active');
+        clearInterval(autoSpinInterval);
+    }
+}
+function lockSpaceKey(duration) {
+    isSpaceLocked = true; // 锁定空白键
+    console.log(`空白鍵被鎖定 ${duration} 秒`);
+
+    // 清除之前的计时器（如果存在）
+    if (spaceLockTimer) {
+        clearTimeout(spaceLockTimer);
+    }
+
+    // 设置定时器解锁
+    spaceLockTimer = setTimeout(() => {
+        isSpaceLocked = false;
+        console.log("空白鍵已解鎖");
+    }, duration * 1000); // 转换为毫秒
+}
+// 確保 data 加載後再執行運算
+window.onload = function() {
+    const spinStatusElement = document.getElementById('spinStatus');
+    if (spinStatusElement) {
+        spinStatusElement.textContent = 'Slow';
+    }
+    document.getElementById('slowSpinButton').classList.add('active');
+    console.log('DOM Loaded');
+    slotCells = document.querySelectorAll('.slot-cell');
+    bindEvents();
+    initializeGame();
+    runGame(data,spinLengths);
+    initializeReels();
+    // 預設選中綠色玩法按鈕
+};
+
+//滾輪
+function initializeReels() {
+    let reels = document.querySelectorAll('.reel-inner');
+    reels.forEach(reel => {
+        generateReelSymbols(reel, 4);  // 生成 4 個初始符號
+    });
+}
+
+// 生成指定數量的符號，預設為 4 個
+function generateReelSymbols(reel, spins) {
+    let fragment = document.createDocumentFragment();
+    for (let i = 0; i < spins; i++) {
+        let symbol = document.createElement('div');
+        symbol.classList.add('reel-symbol');
+        let randomSymbol = symbolPool[Math.floor(Math.random() * symbolPool.length)];
+        symbol.style.backgroundImage = `url('picture_base/${randomSymbol}.png')`;
+        symbol.style.height = '100px';
+        symbol.style.marginBottom = '12px';
+        fragment.appendChild(symbol);  // 新符號從滾輪頂部加入
+    }
+    reel.appendChild(fragment);  // 一次性加入，減少重排
+}
+function loadReelSymbols(reel, spins,index) {
+    let fragment = document.createDocumentFragment();
+    let symbolMap = []
+    if(index==0){
+        symbolMap = {0: "WW",1: "C7",2: "C7",3: "M1",4: "M2",5: "M3",6: "M4",7: "M5",9: "A",10: "K",11: "Q",12: "J",13: "TE",14: "C8",15: "C9",};
+    }else if(index == 1){
+        symbolMap = {0: "WW",1: "C8",2: "C8",3: "M1",4: "M2",5: "M3",6: "M4",7: "M5",9: "A",10: "K",11: "Q",12: "J",13: "TE",14: "C8",15: "C9",};
+    }else{
+        symbolMap = {0: "WW",1: "C9",2: "C9",3: "M1",4: "M2",5: "M3",6: "M4",7: "M5",9: "A",10: "K",11: "Q",12: "J",13: "TE",14: "C9",15: "C9",};
+    }
+    longreelData[index].forEach((symbolKey, i) => {
+        if (i >= spins) return; // 超過 spins 數量則停止添加
+        let symbol = document.createElement('div');
+        symbol.classList.add('reel-symbol');
+        let symbolImage = symbolMap[symbolKey];
+        if (!symbolImage) {
+            console.error(`Symbol ${symbolKey} does not have a valid image mapping.`);
+            return;
+        }
+        symbol.style.backgroundImage = `url('picture_base/${symbolImage}.png')`;
+        symbol.style.height = '100px';
+        symbol.style.marginBottom = '12px';
+        fragment.appendChild(symbol);
+    });
+
+    reel.appendChild(fragment); // 一次性加入滾輪
+}
+// 滾輪滾動動畫邏輯
+function spinReelAnimation(reel, spins, duration,index) {
+    let inner = reel.querySelector('.reel-inner');
+    // 1. 保留最後 4 個符號
+    let preservedSymbols = Array.from(inner.querySelectorAll('.reel-symbol')).slice(0,4);
+    inner.innerHTML = ''; 
+    // 2. 生成新的符號
+    loadReelSymbols(inner,longreelData,index);
+
+    // 拼接舊符號到新符號上方
+    preservedSymbols.forEach(symbol => {
+        inner.appendChild(symbol.cloneNode(true));
+    });
+
+    // 3. 拼接舊符號到新符號上方，確保銜接
+    let symbols = inner.querySelectorAll('.reel-symbol');
+    if (symbols.length === 0) {
+        console.error('滾輪內沒有符號，無法滾動');
+        return;
+    }
+    inner.style.transition = 'none';
+    inner.style.transform = 'translateY(0)';  // 重置滾輪位置
+    let symbolHeight = symbols[0].offsetHeight + 12;  // 符號高度 + 間隔
+    let offset = symbolHeight * (spins+1);  // 滾動距離
+
+    // 啟動滾動動畫
+    inner.style.transition = `transform ${duration}ms linear`;
+    inner.style.transform = `translateY(${offset}px)`;  // 滾動向下
+    let skipCheckInterval = setInterval(() => {
+        if (isSkipping) {
+            clearInterval(skipCheckInterval);
+            inner.style.transition = 'none'; // 取消動畫
+            inner.style.transform = `translateY(${offset - symbolHeight}px)`; // 設置到回彈位置
+            removeExcessSymbols(inner, spins + 4);
+            onComplete(); // 通知當前滾輪完成
+        }
+    }, 50);
+    // 滾動結束後重置滾輪
+    setTimeout(() => {
+        if (!isSkipping) {
+            clearInterval(skipCheckInterval);
+            inner.style.transition = 'transform 0.3s ease-out';
+            let reboundOffset = offset - symbolHeight;
+            inner.style.transform = `translateY(${reboundOffset}px)`;
+            setTimeout(() => {
+                removeExcessSymbols(inner, spins + 4);
+            }, 300);
+        }
+
+        // 設置為非旋轉狀態
+        let reels = document.querySelectorAll('.reel');
+        if (reel === reels[reels.length - 1]) { // 最後一個滾輪結束時
+            isSpinning = false; // 動畫完成
+            isSkipping = false; // 重置跳過狀態
+        }
+    }, duration);
+}
+
+
+// 移除滾輪內多餘的符號
+function removeExcessSymbols(reel, targetLength) {
+    let symbols = reel.querySelectorAll('.reel-symbol');
+    let excessCount = symbols.length - targetLength;
+
+    for (let i = 0; i < excessCount; i++) {
+        symbols[symbols.length - 1].remove();  // 移除滾輪最下方多餘的符號
+    }
+}
+
+// 在每次 SPIN 前清理符號 (保持穩定)
+function cleanUpReelSymbols() {
+    let reels = document.querySelectorAll('.reel-inner');
+    let spinLengths = [10, 15, 20, 25, 30];
+
+    reels.forEach((reel, index) => {
+        removeExcessSymbols(reel, spinLengths[index] + 4);  // 保持滾輪穩定
+    });
+}
+
+// 啟動所有滾輪動畫
+function spinAllReels() {
+    if (isSpinning) {
+        isSkipping = true; // 正在旋轉時按下 Spin，觸發跳過動畫
+        return;
+    }
+    isSpinning = true; // 標記為旋轉中
+    isSkipping = false; // 重置跳過標記
+    let reels = document.querySelectorAll('.reel');
+
+    let maxSpins = Math.max(...spinLengths);  // 找出最大滾輪距離
+    let completedReels = 0;
+    cleanUpReelSymbols();
+    reels.forEach((reel, index) => {
+        let spins = spinLengths[index];
+        let duration = baseDuration * (spins / maxSpins);  // 按比例縮放滾動時間
+        setTimeout(() => {
+            spinReelAnimation(reel, spinLengths[index], duration,index);
+            completedReels++;
+            if (completedReels === reels.length) {
+                setTimeout(() => {
+                updateScoreDisplay();  // 所有滾輪完成後更新分數
+            }, baseDuration);
+            }
+            isSpinning = false;
+            isSkipping = false;
+        }, );
+        setTimeout(() => {
+            let currentSymbols = Array.from(reel.querySelectorAll('.reel-symbol'))
+                .map(symbol => symbol.style.backgroundImage.match(/\/(\w+).png/)[1]);
+            console.log(`滾輪 ${index + 1}:`, currentSymbols);
+        },  baseDuration*1.08);  // 滾動動畫+回彈後打印
+    });
+}
+
+// 綁定到 Spin 按鈕
+//
+
+function updateScore() {
+    hits++;
+    totalSpins++;
+    let hitRate = ((hits / totalSpins) * 100).toFixed(2);
+    document.getElementById('totalScoreDisplay').textContent = totalScore;
+    document.getElementById('hitRateDisplay').textContent = `(${hits}/${totalSpins}) ${hitRate}%`;
+}
+// 設定遊戲模式
+function setGameMode(mode, button) {
+    switchMode('hold_spin')
+    gameMode = mode;
+    updateButtonState(button);
+    initializeGame();
+}
+function clearHoldSpinScores() {
+    slotCells.forEach(cell => {
+        cell.textContent = '';  // 清空所有 slot 的分數顯示
+        cell.style.backgroundImage = 'none';  // 可選：清空背景圖片 (視情況而定)
+    });
+    console.log("已清除 Hold & Spin 分數");
+}
+function switchMode(mode) {
+    mainGameMode = mode;  // 更新全域變數來記錄模式
+    let featurePlayPanel = document.querySelector('.feature-play');  // 只選擇玩法按鈕容器
+    let holdSpinContainer = document.getElementById('holdSpinContainer');
+    let baseGameContainer = document.getElementById('baseGameContainer');
+    let backgroundElement = document.querySelector('.background1');
+    if (mode === 'base_game') {
+        /*featurePlayPanel.classList.add('hidden');  // 隱藏玩法按鈕*/
+        holdSpinContainer.classList.add('hidden');  // 隱藏 Hold & Spin 格子
+        baseGameContainer.classList.remove('hidden');  // 顯示 Base Game 滾輪
+        backgroundElement.style.backgroundImage = "url('picture_base/reel.png')";
+        console.log("Base Game 模式 - 顯示滾輪");
+    } else {
+        /*featurePlayPanel.classList.remove('hidden');  // 顯示玩法按鈕*/
+        holdSpinContainer.classList.remove('hidden');  // 顯示 Hold & Spin 格子
+        baseGameContainer.classList.add('hidden');  // 隱藏 Base Game 滾輪
+        backgroundElement.style.backgroundImage = "url('picture_base/FG_reel.png')";
+        console.log("Hold & Spin 模式 - 顯示 3x5 格子");
+    }
+}
+
+// 更新按鈕視覺效果
+function updateButtonState(selectedButton) {
+    let buttons = document.querySelectorAll('.left-panel .button');
+    buttons.forEach(button => button.classList.remove('selected'));
+    selectedButton.classList.add('selected');
+}
+function updateBet() {
+    let dimValue = parseFloat(document.getElementById('dimValue').value);
+    let betMultiplier = parseInt(document.getElementById('betMultiplier').value);
+    let totalBet = dimValue * betMultiplier * 50;
+    
+    // 更新顯示區域的數字
+    document.getElementById('totalBetDisplay').textContent = totalBet.toFixed(2);
+}
+// 初始化遊戲
+function initializeGame() {
+    if (mainGameMode === 'hold_spin') {
+    spinIndex = 0;
+    countdown = 3;
+    const slotCells = document.querySelectorAll('.slot-cell');
+    const slotCells1 = document.querySelectorAll('.cell-container');
+    const slotCells2 = document.querySelectorAll('.overlay-break-frame-container');
+    slotCells.forEach(cell => {
+            let cellContainer = cell.querySelector('.cell-container');
+            if (cellContainer) {
+                cellContainer.innerHTML = ''; // ✅ 只清空内容，不删除 .cell-container
+            }
+            cell.style.backgroundImage = 'none';
+            cell.style.transform = 'translateY(0)';
+            cell.style.transition = 'none';
+        });
+
+        slotCells1.forEach(cell => {
+            cell.innerHTML = ''; // **清空符号**
+            cell.style.backgroundImage = 'none';
+            cell.style.transform = 'translateY(0)';
+            cell.style.transition = 'none';
+        });
+        slotCells2.forEach(cell => {
+            cell.innerHTML = ''; // **清空符号**
+        });
+    runGame(data,spinLengths)
+    displayBalls();
+    } else if (mainGameMode === 'base_game') {
+        // Base Game 初始化邏輯
+        totalSpins = 0
+        winSpins = 0
+        totalScore = 10000
+        updateScoreDisplay();
+        initializeReels()
+        
+    }
+    // 啟用 Spin 按鈕
+    document.getElementById('spinButton').disabled = false;
+}
+function displayReelSymbols(reelData) {
+    // 清空所有 slot
+    slotCells.forEach(cell => {
+        cell.style.backgroundImage = 'none';
+    });
+
+    // 將 5x3 陣列轉換為單一陣列
+    let flattenedReel = flattenReel(reelData);
+
+    // 將符號圖片放置到對應 slot
+    flattenedReel.forEach((symbol, index) => {
+        let cell = slotCells[index];  // 取得第 index 個 slot
+
+    });
+}
+function calculateHitRate() {
+    if (totalSpins === 0) {
+        return `(0/0) 0%`;  // 初始狀態
+    }
+    if (baseGameScore>0){
+        winSpins+=1
+    }
+    let hitRate = ((winSpins / totalSpins) * 100).toFixed(2);
+    return {arr:`(${winSpins}/${totalSpins}) ${hitRate}%`,arr1:totalSpins};
+}
+
+function updateScoreDisplay() {
+    if (mainGameMode === 'hold_spin') {
+    let baseGameScore = point1(totalSequence, originalScores,displayOrder[spinIndex],parseFloat(document.getElementById('dimValue').value)).reduce((a, b) => a + b, 0);  // 計算總分
+    if(displayOrder[spinIndex]==15){
+        baseGameScore+=12000/parseFloat(document.getElementById('dimValue').value)
+    }
+    let formattedScore = baseGameScore.toFixed(2);  // 格式化為兩位小數
+    let betMultiplier = parseInt(document.getElementById('betMultiplier').value);
+    let formattedMultiplier = (baseGameScore / (bet * betMultiplier)).toFixed(2);
+    document.getElementById('scoreDisplay').textContent = `${formattedMultiplier}`;
+    document.getElementById('multiplierDisplay').textContent = `${formattedScore}`;
+    if (spinIndex >= displayOrder.length-1){
+        totalScore+=baseGameScore*parseFloat(document.getElementById('dimValue').value)
+        document.getElementById('totalScoreDisplay').textContent = `${totalScore.toFixed(2)}`;
+        console.log(RTPbet)
+        document.getElementById('RTPDisplay').textContent = `${((RTPbet+totalScore-10000)/(RTPbet)).toFixed(2)}`;
+    }
+    }else if (mainGameMode === 'base_game') { 
+    let formattedBaseScore = baseGameScore.toFixed(2);
+    let formattedBaseMultiplier = (baseGameScore / 50).toFixed(2);  // 假設 base game 沒有乘以 betMultiplier
+    let hitRate = calculateHitRate();
+    console.log(baseGameScore)
+    totalSpins++;
+    document.getElementById('totalScoreDisplay').textContent = `${totalScore}`;
+    document.getElementById('hitRateDisplay').textContent = hitRate.arr;
+    document.getElementById('RTPDisplay').textContent = `${((hitRate.arr1*50+totalScore-10000)/(hitRate.arr1*50)).toFixed(2)}`;
+    document.getElementById('multiplierDisplay').textContent = `${formattedBaseScore}`;
+    document.getElementById('scoreDisplay').textContent = `${formattedBaseMultiplier}`;
+    }
+}
+
+// 執行一次以初始化結果
+// 綁定按鈕事件
+function bindEvents() {
+    document.getElementById('spinButton').addEventListener('click', spinNext);
+    document.getElementById('resetButton').addEventListener('click', initializeGame);
+}
+document.getElementById('resetButton').addEventListener('click', function() {
+    if (mainGameMode == 'base_game') {
+        Fhit = [0, 0, 0, 0, 0, 0, 0];  // 重置 Fhit 数组
+        document.getElementById('Feature-hit').textContent = `${Fhit[0]}/${Fhit[1]}/${Fhit[2]}/${Fhit[3]}/${Fhit[4]}/${Fhit[5]}/${Fhit[6]} ${sum(Fhit)}`;
+    } 
+});
+
+
+// 隨機取得位置
+function getRandomPositions(count) {
+    let emptyPositions = slotPositions.filter(pos => !filledPositions.includes(pos));
+    return shuffle(emptyPositions).slice(0, count);
+}
+
+// 顯示球和分數
+function displayBalls() {
+    let slotCells = document.querySelectorAll('.slot-cell'); // 获取所有格子
+    let slotCells1 = document.querySelectorAll('.cell-container'); // 获取所有格子
+    let slotCells2 = document.querySelectorAll('.overlay-break-frame'); // 获取所有格子
+    const totalPositions = randomPositions.length; // 总格子数
+    const previousDisplayCount = displayOrder[spinIndex - 1] || 0; // 上一次显示的球数量
+    const currentDisplayCount = displayOrder[spinIndex]; // 当前需要显示的球数量
+    let povnumber = Math.max(totalSequence.slice(previousDisplayCount,currentDisplayCount).lastIndexOf(2),totalSequence.slice(previousDisplayCount,currentDisplayCount).lastIndexOf(6))+1+previousDisplayCount;
+    if(spinIndex==0){
+    // 遍历所有格子，根据情况填充球或空白内容
+    for (let i = 0; i < totalPositions; i++) {
+        let pos = randomPositions[i]; // 获取当前格子的位置
+        let cell = slotCells[pos]; // 获取对应的 DOM 元素
+        let cell1 = slotCells1[pos];
+        // 清空当前格子内容
+        if (i >= currentDisplayCount) {
+            cell1.innerHTML = ''; // **清空 cell1**
+        let fragment = document.createDocumentFragment();
+        for (let j = 0; j < 2; j++) {
+            let transparentReel = document.createElement('div');
+            transparentReel.classList.add('reel1-symbol');
+            transparentReel.style.backgroundImage = `url('picture_base/FG_WW.png')`;
+            transparentReel.style.height = '130px'; 
+            transparentReel.style.backgroundSize = '130%';
+            fragment.appendChild(transparentReel);
+        }
+        cell1.appendChild(fragment);
+        }
+            }
+            executeSequence(currentDisplayCount,previousDisplayCount)
+    }else if(spinIndex<displayOrder.length){ 
+        // 滚轮更新逻辑
+        let fi = Array(displayOrder[spinIndex]).fill(1).concat(Array(15 - displayOrder[spinIndex]).fill(0));
+        let randomNumbers = Array.from({ length: 15-previousDisplayCount }, () => Math.floor(Math.random() * (16)) + 4);
+        let fi1 = Array(previousDisplayCount).fill(0).concat(randomNumbers);
+        let fi2Candidates = firstSequence.slice(3, 6).filter(val => val !== 2)
+        let fi2 = fi2Candidates.length > 0 ? fi2Candidates[Math.floor(Math.random() * fi2Candidates.length)] : null;
+            
+        let fi3 = Array(15).fill(0);
+        if(currentDisplayCount>previousDisplayCount){
+            for (let i = previousDisplayCount; i < currentDisplayCount; i++) {
+                fi3[i] = 1;  // 将指定范围内的元素设置为 1
+            }
+            totalSequence.slice(previousDisplayCount, currentDisplayCount).forEach((num, index) => {
+                fi[previousDisplayCount + index] = num;
+            });
+            fi2=2
+        }else{
+            if(Math.random()>0.8){fi2=2}
+        }
+        if (!totalSequence.slice(previousDisplayCount, currentDisplayCount).some(num => [3, 4, 5].includes(num))) {
+        fi[Math.floor(Math.random() * (15 - previousDisplayCount)) + (previousDisplayCount)] = fi2}
+        let currentScores = point1(totalSequence, originalScores,povnumber,parseFloat(document.getElementById('dimValue').value));
+        let tt = new Array(totalPositions).fill(0);
+        tt.fill(1, previousDisplayCount,povnumber);
+        console.log(tt)
+        console.log(currentScores)
+        for (let i = previousDisplayCount; i < totalPositions; i++) {
+            let pos = randomPositions[i];
+            let cell1 = slotCells1[pos];
+
+            updateReelAnimation(cell1, fi1[i], 100,fi[i],fi3[i],i,currentScores,tt[i]); // 更新滚轮动画
+        }
+        console.log(previousDisplayCount,currentDisplayCount,povnumber)
+        
+        setTimeout(() => {
+            if(currentDisplayCount>previousDisplayCount){
+                executeSequence(currentDisplayCount,previousDisplayCount)
+            }else{
+                updateScoreDisplay();
+                updateCountdownDisplay();
+            }
+        }, 100*(Math.max(...randomNumbers)+4)); 
+        lockSpaceKey(0.1*(Math.max(...randomNumbers)+4))
+    }
+}
+async function executeSequence(currentDisplayCount,previousDisplayCount) {
+    await processSequence(totalSequence, randomPositions.length, currentDisplayCount, previousDisplayCount);
+    // ✅ 确保 `someAsyncFunction` 执行完后再执行下面的代码
+    updateScoreDisplay();
+    updateCountdownDisplay();
+
+}
+function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// 定义异步函数
+async function processSequence(totalSequence, totalPositions, currentDisplayCount, povnumber) {
+    for (let i = povnumber; i < currentDisplayCount; i++) {
+        if (totalSequence[i] == 5) {
+            // 调用 pictureup 并等待它执行完
+            pictureup(totalPositions,currentDisplayCount,i)
+                let element = document.querySelector(`.overlay-break-frame[data-id="${i}"]`);
+    // ✅ 2. 使用 setTimeout，确保浏览器重新计算样式
+            setTimeout(() => {
+                element.style.transition = "transform 0.5s ease-in-out";
+                element.style.transform = "scale(1.5)"; // ✅ 放大
+                setTimeout(() => {
+                    element.style.transform = "scale(1)"; // ✅ 缩小回去
+                    setTimeout(() => {
+                    pictureup(totalPositions,currentDisplayCount,i+1)
+                    }, 500);
+                }, 500);
+            }, 10); // **确保样式刷新**
+            lockSpaceKey(1.1)
+            await delay(1015)
+        } else if (totalSequence[i] == 4) {
+            pictureup(totalPositions, currentDisplayCount, i);
+        let sourceCell = document.querySelector(`.overlay-break-frame[data-id="${i}"]`);
+        let targetCells = [];
+        for (let j = 0; j < i; j++) {
+            if (totalSequence[j] !== 6) {
+                let targetCell = document.querySelector(`.overlay-break-frame[data-id="${j}"]`);
+                if (targetCell) targetCells.push(targetCell);
+            }
+        }
+        targetCells.forEach((targetCell, index) => {
+            let x2 = document.createElement('div');
+            x2.textContent = 'X2';
+            document.body.appendChild(x2); // ✅ 直接添加到 body，防止被遮挡
+            let sourceRect = sourceCell.getBoundingClientRect();
+            let targetRect = targetCell.getBoundingClientRect();
+            // ✅ **在 JavaScript 里手动设置 X2 样式**
+            x2.style.position = "absolute";
+            x2.style.top = `${sourceRect.top + sourceRect.height / 2}px`;
+            x2.style.left = `${sourceRect.left + sourceRect.width / 2}px`;
+            x2.style.transform = "translate(-50%, -50%) scale(1)";
+            x2.style.opacity = "1";
+            // ✅ **确保 X2 在最上层**
+            x2.style.fontSize = "24px";
+            x2.style.fontWeight = "bold";
+            x2.style.color = "white"; // ✅ X2 文字颜色为白色
+            x2.style.textShadow = "-2px -2px 0 black, 2px -2px 0 black, -2px 2px 0 black, 2px 2px 0 black"; // ✅ 黑色描边
+            x2.style.padding = "5px";
+            x2.style.zIndex = "9999"; // ✅ 确保 `X2` 在最上层
+            x2.style.pointerEvents = "none"; // ✅ 防止影响鼠标事件
+            x2.style.whiteSpace = "nowrap"; // ✅ 确保 `X2` 文字不换行
+            // ✅ **X2 飞向目标球**
+            setTimeout(() => {
+                x2.style.transition = "transform 1s ease-out, opacity 1s ease-out";
+                x2.style.transform = `translate(${targetRect.left - sourceRect.left}px, ${targetRect.top - sourceRect.top}px) scale(1.5)`;
+                x2.style.opacity = "0";
+                setTimeout(() => {
+                    x2.remove();
+                    pictureup(totalPositions, currentDisplayCount, i+1);
+// ✅ 最后一个 X2 消失后，进入下一个逻辑
+                }, 1000);
+            }, 0);
+        });
+        lockSpaceKey(1)
+        await delay(1000)
+        } else if (totalSequence[i] == 3) {
+            pictureup(totalPositions, currentDisplayCount, i);
+            let sourceCell = document.querySelector(`.overlay-break-frame[data-id="${i}"]`);
+            let targetCells = [];
+            for (let j = 0; j < i; j++) {
+            if (totalSequence[j] !== 6) {
+                    let targetCell = document.querySelector(`.overlay-break-frame[data-id="${j}"]`);
+                    if (targetCell) targetCells.push(targetCell);
+                }
+            }
+            targetCells.forEach((targetCell, index) => {
+            // ✅ 获取目标球上的 `text`
+            let textElement = targetCell.querySelector("div");
+            // ✅ **克隆 `text` 生成一个完全相同的复制品**
+            let textCopy = textElement.cloneNode(true); // ✅ 复制所有子元素和格式
+            document.body.appendChild(textCopy); // ✅ 放入 `body` 让其自由飞行
+            let sourceRect = targetCell.getBoundingClientRect();
+            let targetRect = sourceCell.getBoundingClientRect();
+            // ✅ 只修改 `textCopy` 的位置，不改变格式
+            textCopy.style.position = "absolute";
+            textCopy.style.top = `${sourceRect.top + sourceRect.height / 2}px`;
+            textCopy.style.left = `${sourceRect.left + sourceRect.width / 2}px`;
+            textCopy.style.transform = "translate(-50%, -50%) scale(2)";
+            textCopy.style.opacity = "1";
+            textCopy.style.zIndex = "9999"; // ✅ 确保 `textCopy` 在最上层
+            // ✅ `textCopy` 飞向 `3` 号球
+            setTimeout(() => {
+                textCopy.style.transition = "transform 1s ease-out, opacity 1s ease-out";
+                textCopy.style.transform = `translate(${targetRect.left - sourceRect.left}px, ${targetRect.top - sourceRect.top}px)`;
+                textCopy.style.opacity = "0";
+                setTimeout(() => {
+                    textCopy.remove(); // ✅ `textCopy` 消失，但原 `text` 保持不变
+                    pictureup(totalPositions, currentDisplayCount, i+1);
+                }, 1000);
+            }, 0);
+        })
+        lockSpaceKey(1)
+        await delay(1000)
+        } else {
+            pictureup(totalPositions, currentDisplayCount, i+1);
+        }
+    }
+}
+function pictureup(totalPositions,currentDisplayCount,t){
+    let currentScores = point1(totalSequence, originalScores,t,parseFloat(document.getElementById('dimValue').value));
+    let overlayContainer = document.querySelector('.overlay-break-frame-container');
+    overlayContainer.innerHTML =''
+    for (let i = 0; i < totalPositions; i++) {
+    let slotCells = document.querySelectorAll('.slot-cell'); // 获取所有格子
+    let pos = randomPositions[i]; // 获取当前格子的位置
+    let cell = slotCells[pos]; // 获取对应的 DOM 元素
+
+    if (i < currentDisplayCount) {
+        let ballType = totalSequence[i];
+        let scores = originalScores[i];
+        let scoreValue = scoreVector[i];
+        let rect = cell.getBoundingClientRect();
+        let containerRect = document.querySelector('.slot-container').getBoundingClientRect();
+
+        // ✅ **检查是否已存在 overlay-break-frame，避免重复创建**
+        let overlayFrame = overlayContainer.querySelector(`.overlay-break-frame[data-id="${i}"]`);
+        
+        if (!overlayFrame) {
+            overlayFrame = document.createElement('div');
+            overlayFrame.classList.add('overlay-break-frame');
+            overlayFrame.setAttribute('data-id', i); // ✅ 让它匹配 slot-cell
+            overlayContainer.appendChild(overlayFrame);
+        }
+
+        // **设置 overlay-break-frame 位置**
+        overlayFrame.style.position = 'absolute';
+        overlayFrame.style.width = '120px'; /* ✅ 让它比 slot-cell 大 */
+        overlayFrame.style.height = '120px';
+        overlayFrame.style.top = `${-13+Math.floor(pos/5)*97}px`;
+        overlayFrame.style.left = `${-13+(pos%5)*96}px`;
+        overlayFrame.style.pointerEvents = 'none';
+        overlayFrame.style.zIndex = '10';
+        // **更新破框背景**
+        overlayFrame.style.backgroundImage = `url('picture_base/C${ballType}.png')`;
+        overlayFrame.style.backgroundSize = 'contain';
+        overlayFrame.style.backgroundRepeat = 'no-repeat';
+        overlayFrame.style.backgroundPosition = 'center';
+        // ✅ **确保分数仍然正确匹配 slot-cell**
+        if (i<t) {
+            let scoreElement = createScoreElement(scores, scoreValue,currentScores[i]);
+            scoreElement.style.zIndex = '12';
+            overlayFrame.appendChild(scoreElement);
+        }
+    }
+}
+}
+
+
+function updateReelAnimation(cell1, spins, ete,fix1,fix2,i,currentScores,tt) {
+    let map = {0: "FG_WW",1: "FG_M1",2: "FG_M2",3: "FG_M3",4: "FG_M4",5: "FG_M5",6: "FG_A",7: "FG_K",9: "FG_Q",10: "FG_J",11: "FG_Ten",};
+    let reelSymbols = Array(spins).fill().map(() => {
+    let values = Object.values(map);
+    return values[Math.floor(Math.random() * values.length)];
+});
+    let replaceCount = Math.round(0.2 * spins);
+    // 随机选择索引进行替换
+    let indices = Array.from({ length: spins }, (_, i) => i);
+    let selectedIndices = [];
+    for (let i = 0; i < replaceCount; i++) {
+        let randomIndex = indices.splice(Math.floor(Math.random() * indices.length), 1)[0];
+        selectedIndices.push(randomIndex);
+    }
+    // 替换选定索引的符号
+    selectedIndices.forEach(index => {
+        reelSymbols[index] = `C${fix1}`;
+    }); // 根据 fix1 生成符号
+    // 如果 fix2 = 1，则将第二个位置替换为 C${fix1}
+    if (fix2 === 1) {
+        reelSymbols[1] = `C${fix1}`;
+    }else{
+        let randomValue = Object.values(map)[Math.floor(Math.random() * Object.values(map).length)];
+        reelSymbols[1] = randomValue;
+    } // 根据 fix1 生成符号
+    
+    spinReelAnimationForSlotCells(cell1, reelSymbols, ete,currentScores,tt,i);
+}
+function createScoreElement(scores, scoreValue,currentScores) {
+    const scoreElement = document.createElement('div');
+    scoreElement.style.position = 'absolute';
+    scoreElement.style.top = '50%';
+    scoreElement.style.left = '50%';
+    scoreElement.style.transform = 'translate(-50%, -50%)';
+    scoreElement.style.fontWeight = 'bold';
+    scoreElement.style.textAlign = 'center';
+    scoreElement.style.color = 'black';
+    scoreElement.style.textShadow = `
+        -1.5px -1.5px 0 white, 
+        1.5px -1.5px 0 white, 
+        -1.5px 1.5px 0 white, 
+        1.5px 1.5px 0 white`;
+    scoreElement.style.fontSize = '24px';
+    multiplier =  currentScores/scores
+    if (scores === 3500) {
+        scoreElement.innerHTML = `
+                <div class="major-container">
+                    <span class="major-text">MAJOR</span>
+                </div>`;
+                scoreElement.style.color = 'purple';
+        } else if (scores === 1000) {
+            scoreElement.innerHTML = `
+                <div class="mini-container">
+                    <div class="mini-text">MINI</div>
+                    ${multiplier > 1 ? `<div class="multiplier-text">X${multiplier}</div>` : ''}
+                </div>`;
+            scoreElement.style.color = 'green';
+        } else if (scores === 2000) {
+            scoreElement.innerHTML = `
+                <div class="minor-container">
+                    <div class="minor-text">MINOR</div>
+                    ${multiplier > 1 ? `<span class="multiplier-text">X${multiplier}</span>` : ''}
+                </div>`;
+                scoreElement.style.color = 'blue';
+        } else {
+            scoreElement.textContent = currentScores;
+            scoreElement.style.color = 'black';
+        }
+    return scoreElement;
+}
+document.addEventListener('keydown', function(event) {
+    if (event.code === 'Space') {
+        if (isSpaceLocked) {
+            console.log("空格键被锁定，暂时无法使用");
+            return;
+        }
+
+        // ✅ 阻止默认行为（避免滚动）
+        event.preventDefault();
+
+        // ✅ 确保 `Space` 只在 `body` 触发，而不会在 `button` 被 `focus` 时触发
+        if (event.target.tagName === "BUTTON") {
+            event.target.blur(); // ✅ 取消 `button` 的 `focus`
+        }
+
+        // ✅ 只执行 `Spin` 按钮点击
+        document.getElementById('spinButton').click();
+    }
+
+    // **CapsLock 触发 New Game**
+    if (event.code === 'CapsLock') {
+        event.preventDefault();
+        document.getElementById('resetButton').click();
+    }
+});
+// 下一次 Spin
+
+
+function spinNext() {
+    if (mainGameMode === 'hold_spin') {
+
+    if (spinIndex < displayOrder.length){
+        let previousCount = displayOrder[spinIndex];
+    spinIndex++;
+    let currentCount = displayOrder[spinIndex];
+    // 如果新球數量 > 現在顯示的球數量，倒數回到3
+    let newBalls = currentCount - previousCount; // 計算新增的球數量
+    // 如果有新增的球，倒計時重置為3，否則減1
+    countdown = newBalls > 0 ? 3 : countdown - 1;
+    displayBalls();
+    }
+        
+        else if (spinIndex == displayOrder.length) {
+        console.log("Hold & Spin 結束");
+ 
+        if(featuregame>0){
+            featuregame=0
+            setTimeout(() => {
+            switchMode('base_game')
+        }, 2000); // 延迟 2.4 秒执行
+        }
+    }
+    } else if (mainGameMode === 'base_game') {
+        console.log("Base Game Spin 啟動");
+        totalScore -=bet*parseInt(document.getElementById('betMultiplier').value)*(document.getElementById('dimValue').value)
+        totalScore += gameResult*parseInt(document.getElementById('betMultiplier').value)*(document.getElementById('dimValue').value)
+        RTPbet += bet*parseInt(document.getElementById('betMultiplier').value)
+        runGame(data,spinLengths)
+        const mode = checkSpecialConditions(reelData);
+        console.log(featuregame)
+    if (mode) {
+        lockSpaceKey(2.5); // 锁定 2.5 秒
+        if (mode=='green'){Fhit[0]+=1}
+        if (mode=='Red'){Fhit[1]+=1}
+        if (mode=='Blue'){Fhit[2]+=1}
+        if (mode=='g_b'){Fhit[3]+=1}
+        if (mode=='g_r'){Fhit[4]+=1}
+        if (mode=='r_b'){Fhit[5]+=1}
+        if (mode=='g_r_b'){Fhit[6]+=1}
+        document.getElementById('Feature-hit').textContent = `${Fhit[0]}/${Fhit[1]}/${Fhit[2]}/${Fhit[3]}/${Fhit[4]}/${Fhit[5]}/${Fhit[6]} ${sum(Fhit)}`;
+        setTimeout(() => {
+                setGameMode(mode, this); // 延迟切换模式
+            }, 2450); // 延迟 2.4 秒执行
+    } else {
+        lockSpaceKey(baseDuration*1.15/1000); // 默认锁定 1.6 秒
+    }
+    // 启动所有滚轮
+    spinAllReels();
+} 
+}
+// 倒數顯示更新
+function updateCountdownDisplay() {
+    const boxes = document.querySelectorAll('.count-box');
+    boxes.forEach((box, index) => {
+        if (index < countdown) {
+            box.classList.add('active'); // 点亮
+        } else {
+            box.classList.remove('active'); // 暗色
+        }
+    });
+    
+}
+
+function spinReelAnimationForSlotCells(cell1, reelSymbols,ete,currentScores,tt,i) {
+    // 1. 保留最後 2 個符號
+    let preservedSymbols1 = Array.from(cell1.querySelectorAll('.reel1-symbol')).slice(0,2);
+    cell1.innerHTML = ''; 
+    reelSymbols.forEach((symbolName,index) => {
+        let symbol = document.createElement('div');
+        symbol.classList.add('reel1-symbol');
+        symbol.style.position = 'relative';
+        symbol.style.backgroundImage = `url('picture_base/${symbolName}.png')`;
+        symbol.style.height = '130px';
+        symbol.style.backgroundSize = '130%';
+        let y = parseInt(document.getElementById('betMultiplier').value);  // y 來自 Bet Multiplier
+        let dim = parseFloat(document.getElementById('dimValue').value);   // dim 來自 Dim Value
+        if (Math.random() < y * dim / 3500) {
+            aa = 3500;
+        } else if (Math.random() < y / 250) {
+            aa = 1000;
+        } else if (Math.random() < y / 500) {
+            aa = 2000;
+        } else {
+            aa = rpoint(); // ✅ 可选：如果没有任何条件触发，设置默认值
+        }
+        let scoreElement = createScoreElement(aa, 1, aa);
+  
+        if (tt > 0 && index==1) {
+        let extraScore = createScoreElement(currentScores[i], 1, currentScores[i]);
+        console.log(currentScores[i])
+        symbol.appendChild(extraScore);
+        }else{
+            if (["C0", "C1", "C2", "C6"].includes(symbolName)) {symbol.appendChild(scoreElement);}
+        }
+        cell1.appendChild(symbol);
+    });
+    preservedSymbols1.forEach(symbol => {
+        cell1.appendChild(symbol.cloneNode(true));
+    });
+    let symbolHeight = 130;
+    let spins = reelSymbols.length;
+    let offset = symbolHeight * (spins + 1); 
+    let baseDuration = 0; // **基准滚动时间**
+    let perSymbolTime = ete; // **每个符号的滚动时间**
+    let duration = baseDuration + (spins * perSymbolTime); // * *动态计算滚轮滚动时间**
+    // 启动滚轮动画
+    
+    cell1.style.transition = `transform ${duration}ms linear`;
+    cell1.style.transform = `translateY(${offset}px)`;
+
+    setTimeout(() => {
+        cell1.style.transition = 'transform 0.3s ease-out';
+        let reboundOffset = offset - symbolHeight;
+        cell1.style.transform = `translateY(${reboundOffset}px)`;
+        setTimeout(() => {
+            Array.from(cell1.querySelectorAll('.reel1-symbol')).slice(2,length.cell1).forEach(symbol => symbol.remove());
+            cell1.style.transition = 'none';
+            cell1.style.transform = `translateY(0px)`;
+        }, 300);
+    }, duration);
+}
+function handleGameMode(reelData) {
+    const mode = checkSpecialConditions(reelData);
+    if (mode) {
+        console.log(`Triggering game mode: ${mode}`);
+        setGameMode(mode, null); // 假设不需要 button，可以传入 null
+    } else {
+        console.log('No special conditions met.');
+    }
+}
+function checkSpecialConditions(reelData) {
+    // 展平 `reelData`，将二维数组转换为一维数组
+    function randomPick(options) {
+    let index = Math.floor(Math.random() * options.length);
+    return options[index];
+    }
+    let flattenedReelData = reelData.flat();
+    // 统计各符号的出现次数
+    let counts = {};
+    flattenedReelData.forEach(symbol => {
+        counts[symbol] = (counts[symbol] || 0) + 1;
+    });
+    // 检查满足的条件并返回对应的 mode
+    if (counts[1] >= 2 && counts[2] >= 1) {
+        // 随机从 green, Red, Blue 中选择一个
+        featuregame = 1
+        return randomPick(['green', 'Red', 'Blue']);
+    } else if (counts[1] >= 2 && counts[14] >= 1) {
+        // 随机从 g_b, g_r, r_b 中选择一个
+        featuregame = 2
+        return randomPick(['g_b', 'g_r', 'r_b']);
+    } else if (counts[1] >= 2 && counts[15] >= 1) {
+        // 直接进入 g_r_b
+        featuregame = 3
+        return 'g_r_b';
+    }
+    return null; // 如果没有满足条件，返回 null
+}
+
+
+
+
+    </script>
+</body>
+</html>
