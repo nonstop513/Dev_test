@@ -1,20 +1,28 @@
-// GET /api/me — returns current logged-in user info
+// GET /api/me
 export async function onRequestGet({ request, env }) {
-  const cookie = request.headers.get('Cookie') ?? '';
-  const match = cookie.match(/session=([^;]+)/);
-  if (!match) {
-    return new Response(JSON.stringify({ error: 'Unauthenticated' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' },
-    });
+  const sessionId = getCookie(request, 'session');
+  if (!sessionId) return json({ error: 'Unauthenticated' }, 401);
+
+  const session = await env.DB.prepare(
+    'SELECT username, expires_at FROM sessions WHERE session_id = ?'
+  ).bind(sessionId).first();
+
+  if (!session || session.expires_at < Date.now()) {
+    return json({ error: 'Session expired' }, 401);
   }
 
-  // TODO: look up sessionId in KV to get real username
-  const sessionId = match[1];
-  const username = 'admin'; // placeholder until KV is wired up
+  return json({ username: session.username });
+}
 
-  return new Response(JSON.stringify({ username, sessionId }), {
-    status: 200,
+function getCookie(request, name) {
+  const cookie = request.headers.get('Cookie') ?? '';
+  const match = cookie.match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`));
+  return match ? match[1] : null;
+}
+
+function json(data, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
     headers: { 'Content-Type': 'application/json' },
   });
 }

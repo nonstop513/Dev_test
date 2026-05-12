@@ -2,35 +2,39 @@
 // Body: { game, result, win }
 export async function onRequestPost({ request, env }) {
   try {
-    const cookie = request.headers.get('Cookie') ?? '';
-    const match = cookie.match(/session=([^;]+)/);
-    if (!match) {
-      return new Response(JSON.stringify({ error: 'Unauthenticated' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
+    const sessionId = getCookie(request, 'session');
+    if (!sessionId) return json({ error: 'Unauthenticated' }, 401);
 
-    const body = await request.json();
-    const log = {
-      sessionId: match[1],
-      game: body.game,
-      result: body.result,
-      win: body.win,
+    const session = await env.DB.prepare(
+      'SELECT username FROM sessions WHERE session_id = ? AND expires_at > ?'
+    ).bind(sessionId, Date.now()).first();
+
+    if (!session) return json({ error: 'Session expired' }, 401);
+
+    const { game, result, win } = await request.json();
+
+    // TODO: 之後可新增 play_logs 資料表取代 console.log
+    console.log('[play-log]', JSON.stringify({
+      username: session.username,
+      game, result, win,
       timestamp: new Date().toISOString(),
-    };
+    }));
 
-    // TODO: write log to D1 or KV
-    console.log('[play-log]', JSON.stringify(log));
-
-    return new Response(JSON.stringify({ ok: true }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return json({ ok: true });
   } catch {
-    return new Response(JSON.stringify({ error: 'Bad request' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return json({ error: 'Bad request' }, 400);
   }
+}
+
+function getCookie(request, name) {
+  const cookie = request.headers.get('Cookie') ?? '';
+  const match = cookie.match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`));
+  return match ? match[1] : null;
+}
+
+function json(data, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
 }
