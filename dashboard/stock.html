@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>股票查詢 | Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f1117; --card: #1e2130; --border: rgba(255,255,255,0.08);
+      --accent: #7c6ef2; --text: #e8eaf0; --muted: #7a7f9a;
+      --green: #3ecf8e; --red: #f25e7c;
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    header { display: flex; align-items: center; justify-content: space-between; padding: 20px 40px; border-bottom: 1px solid var(--border); }
+    header h1 { font-size: 1.1rem; }
+    .back { color: var(--muted); font-size: 0.85rem; text-decoration: none; }
+    .back:hover { color: var(--accent); }
+    main { padding: 40px; max-width: 900px; margin: 0 auto; }
+
+    /* 搜尋列 */
+    .search-bar { display: flex; gap: 12px; margin-bottom: 36px; }
+    .search-bar input {
+      flex: 1; background: var(--card); border: 1px solid var(--border);
+      border-radius: 10px; color: var(--text); font-size: 1rem; padding: 12px 16px; outline: none;
+    }
+    .search-bar input:focus { border-color: var(--accent); }
+    .search-bar input::placeholder { color: var(--muted); }
+    .search-bar button {
+      background: var(--accent); border: none; border-radius: 10px;
+      color: #fff; font-size: 1rem; font-weight: 600; padding: 12px 28px; cursor: pointer;
+    }
+    .search-bar button:hover { background: #6a5de0; }
+    .search-bar button:disabled { background: #444; cursor: not-allowed; }
+
+    /* 股票資訊卡 */
+    .stock-info { display: none; }
+    .info-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 28px; }
+    .info-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
+    .info-card .label { font-size: 0.78rem; color: var(--muted); margin-bottom: 8px; }
+    .info-card .value { font-size: 1.4rem; font-weight: 700; }
+    .info-card .value.up { color: var(--green); }
+    .info-card .value.down { color: var(--red); }
+
+    /* 圖表 */
+    .chart-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; }
+    .chart-card h3 { font-size: 0.9rem; color: var(--muted); margin-bottom: 20px; }
+    .chart-wrap { position: relative; height: 300px; }
+
+    /* 錯誤 / 載入 */
+    #message { color: var(--muted); font-size: 0.95rem; text-align: center; margin-top: 60px; }
+
+    /* 快捷標籤 */
+    .shortcuts { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+    .tag { background: var(--card); border: 1px solid var(--border); border-radius: 20px;
+      color: var(--muted); cursor: pointer; font-size: 0.8rem; padding: 5px 14px; }
+    .tag:hover { border-color: var(--accent); color: var(--accent); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>📈 股票走勢查詢</h1>
+    <a class="back" href="/portal.html">← 返回大廳</a>
+  </header>
+  <main>
+    <div class="search-bar">
+      <input id="symbolInput" type="text" placeholder="輸入股票代碼，例如：AAPL、2330.TW、TSLA" />
+      <button id="searchBtn">查詢</button>
+    </div>
+
+    <div class="shortcuts">
+      <span class="tag" data-symbol="AAPL">AAPL 蘋果</span>
+      <span class="tag" data-symbol="TSLA">TSLA 特斯拉</span>
+      <span class="tag" data-symbol="NVDA">NVDA 輝達</span>
+      <span class="tag" data-symbol="2330.TW">2330 台積電</span>
+      <span class="tag" data-symbol="2317.TW">2317 鴻海</span>
+      <span class="tag" data-symbol="^GSPC">S&P 500</span>
+    </div>
+
+    <p id="message">請輸入股票代碼開始查詢</p>
+
+    <div class="stock-info" id="stockInfo">
+      <div class="info-cards">
+        <div class="info-card">
+          <div class="label">股票名稱</div>
+          <div class="value" id="stockName" style="font-size:1rem;">—</div>
+        </div>
+        <div class="info-card">
+          <div class="label">目前股價</div>
+          <div class="value" id="currentPrice">—</div>
+        </div>
+        <div class="info-card">
+          <div class="label">今日漲跌</div>
+          <div class="value" id="todayChange">—</div>
+        </div>
+        <div class="info-card">
+          <div class="label">漲跌幅</div>
+          <div class="value" id="changePercent">—</div>
+        </div>
+      </div>
+      <div class="chart-card">
+        <h3 id="chartTitle">近 10 日股價走勢</h3>
+        <div class="chart-wrap">
+          <canvas id="priceChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    let chart = null;
+
+    // 快捷標籤
+    document.querySelectorAll('.tag').forEach(tag => {
+      tag.addEventListener('click', () => {
+        document.getElementById('symbolInput').value = tag.dataset.symbol;
+        fetchStock(tag.dataset.symbol);
+      });
+    });
+
+    document.getElementById('searchBtn').addEventListener('click', () => {
+      const symbol = document.getElementById('symbolInput').value.trim().toUpperCase();
+      if (symbol) fetchStock(symbol);
+    });
+
+    document.getElementById('symbolInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        const symbol = e.target.value.trim().toUpperCase();
+        if (symbol) fetchStock(symbol);
+      }
+    });
+
+    async function fetchStock(symbol) {
+      const btn = document.getElementById('searchBtn');
+      const msg = document.getElementById('message');
+      const info = document.getElementById('stockInfo');
+
+      btn.disabled = true;
+      msg.style.display = 'block';
+      msg.textContent = '查詢中...';
+      info.style.display = 'none';
+
+      try {
+        const res = await fetch(`/api/stock?symbol=${encodeURIComponent(symbol)}`);
+        const json = await res.json();
+
+        if (json.error) throw new Error(json.error);
+
+        const result = json.chart.result[0];
+        const meta = result.meta;
+        const timestamps = result.timestamp;
+        const closes = result.indicators.quote[0].close;
+
+        // 過濾掉 null 值
+        const validData = timestamps
+          .map((ts, i) => ({ date: ts, price: closes[i] }))
+          .filter(d => d.price !== null)
+          .slice(-10);
+
+        const labels = validData.map(d => {
+          const date = new Date(d.date * 1000);
+          return `${date.getMonth() + 1}/${date.getDate()}`;
+        });
+        const prices = validData.map(d => d.price.toFixed(2));
+
+        // 漲跌計算
+        const latest = validData[validData.length - 1].price;
+        const prev = validData[validData.length - 2]?.price ?? latest;
+        const change = latest - prev;
+        const changePct = ((change / prev) * 100).toFixed(2);
+        const isUp = change >= 0;
+
+        // 更新資訊卡
+        document.getElementById('stockName').textContent = meta.shortName ?? symbol;
+        document.getElementById('currentPrice').textContent =
+          `${meta.currency ?? ''} ${latest.toFixed(2)}`;
+        document.getElementById('todayChange').textContent =
+          `${isUp ? '+' : ''}${change.toFixed(2)}`;
+        document.getElementById('todayChange').className = `value ${isUp ? 'up' : 'down'}`;
+        document.getElementById('changePercent').textContent =
+          `${isUp ? '+' : ''}${changePct}%`;
+        document.getElementById('changePercent').className = `value ${isUp ? 'up' : 'down'}`;
+        document.getElementById('chartTitle').textContent =
+          `${meta.shortName ?? symbol} 近 ${validData.length} 日股價走勢`;
+
+        // 畫圖
+        if (chart) chart.destroy();
+        const ctx = document.getElementById('priceChart').getContext('2d');
+        const color = isUp ? '#3ecf8e' : '#f25e7c';
+        chart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels,
+            datasets: [{
+              label: '收盤價',
+              data: prices,
+              borderColor: color,
+              backgroundColor: color + '22',
+              borderWidth: 2,
+              pointRadius: 4,
+              pointBackgroundColor: color,
+              fill: true,
+              tension: 0.3,
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              x: { ticks: { color: '#7a7f9a' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+              y: { ticks: { color: '#7a7f9a' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+            }
+          }
+        });
+
+        msg.style.display = 'none';
+        info.style.display = 'block';
+      } catch (e) {
+        msg.textContent = `查詢失敗：${e.message}，請確認股票代碼是否正確`;
+      } finally {
+        btn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>

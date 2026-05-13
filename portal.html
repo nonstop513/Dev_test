@@ -41,6 +41,7 @@
     }
     .logout-btn:hover { border-color: var(--accent); color: var(--accent); }
     main { padding: 40px; }
+    .section { margin-bottom: 48px; }
     h2 { font-size: 1.1rem; margin-bottom: 24px; color: var(--muted); }
     .grid {
       display: grid;
@@ -81,8 +82,22 @@
     </div>
   </header>
   <main>
-    <h2>選擇遊戲</h2>
-    <div class="grid" id="gameGrid"></div>
+    <section class="section">
+      <h2>🎰 遊戲 Demo</h2>
+      <div class="grid" id="gameGrid"></div>
+    </section>
+    <section class="section">
+      <h2>📈 股票查詢</h2>
+      <div class="grid">
+        <a class="game-card" href="/dashboard/stock.html">
+          <div class="thumb">📊</div>
+          <div class="game-info">
+            <h3>股票走勢查詢</h3>
+            <p>當前價格 + 近 10 日漲跌</p>
+          </div>
+        </a>
+      </div>
+    </section>
   </main>
 
   <script>
