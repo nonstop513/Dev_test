@@ -795,6 +795,96 @@ body.free-game-mode .stat-value {
     }
 }
 
+/* 匯出原始參數按鈕 */
+.btn-export-data {
+    background: linear-gradient(135deg, #00cec9 0%, #0984e3 100%);
+    color: white;
+    font-size: 0.95em;
+}
+
+.btn-export-data:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+}
+
+/* 匯出 modal 寬一點方便閱讀 */
+.export-modal-content {
+    max-width: 1100px;
+}
+
+.export-info {
+    flex: 1;
+    font-size: 0.85em;
+    color: rgba(255,255,255,0.6);
+    font-style: italic;
+}
+
+.export-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 15px 8px;
+    flex-wrap: wrap;
+}
+
+.export-controls select {
+    flex: 1;
+    min-width: 200px;
+    padding: 7px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.4);
+    color: #fff;
+    font-size: 0.9em;
+}
+
+.btn-copy {
+    padding: 7px 16px;
+    background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 0.9em;
+    white-space: nowrap;
+    transition: all 0.2s;
+    width: auto;
+}
+
+.btn-copy:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.btn-copy.copied {
+    background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%);
+}
+
+.copy-feedback {
+    font-size: 0.85em;
+    color: #00ff88;
+    font-style: italic;
+}
+
+.export-textarea {
+    width: 100%;
+    min-height: 220px;
+    max-height: 380px;
+    padding: 12px 15px;
+    background: rgba(0, 0, 0, 0.5);
+    color: #a8e6cf;
+    border: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    font-family: 'Courier New', monospace;
+    font-size: 0.82em;
+    line-height: 1.5;
+    resize: vertical;
+    outline: none;
+    box-sizing: border-box;
+    display: block;
+}
+
 /* 橫向手機 */
 @media (max-height: 500px) and (orientation: landscape) {
     .modal-content {
