@@ -32,17 +32,34 @@ function generateRawExportText() {
         const indented = json.split('\n').map((l, li) => li === 0 ? l : '  ' + l).join('\n');
         const block = `  "${key}": ${indented}${isLast ? '' : ','}`;
 
-        // 記錄此 key 在最終文字中的實際行號
         keyLineMap[key] = currentLine;
-
         parts.push(block);
-
-        // 計算這個 block 佔了幾行
         currentLine += (block.match(/\n/g) || []).length + 1;
     });
 
     parts.push('}');
     return parts.join('\n');
+}
+
+function downloadDataJs() {
+    const textarea = document.getElementById('exportText');
+    if (!textarea || textarea.value === '生成中...') return;
+
+    const content = `const data = ${textarea.value};\n`;
+    const blob = new Blob([content], { type: 'application/javascript' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'data.js';
+    a.click();
+    URL.revokeObjectURL(url);
+
+    const feedback = document.getElementById('copyFeedback');
+    const kb = (content.length / 1024).toFixed(1);
+    if (feedback) {
+        feedback.textContent = `已下載 (${kb} KB)`;
+        setTimeout(() => { feedback.textContent = ''; }, 3000);
+    }
 }
 
 function populateJumpSelect(keys) {
@@ -137,23 +154,5 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     const copyBtn = document.getElementById('copyExportBtn');
-    if (copyBtn) {
-        copyBtn.addEventListener('click', function () {
-            const textarea = document.getElementById('exportText');
-            if (!textarea || textarea.value === '生成中...') return;
-            textarea.select();
-            navigator.clipboard.writeText(textarea.value).then(() => {
-                copyBtn.classList.add('copied');
-                copyBtn.textContent = '✓ 已複製';
-                const feedback = document.getElementById('copyFeedback');
-                const kb = (textarea.value.length / 1024).toFixed(1);
-                if (feedback) feedback.textContent = `${kb} KB`;
-                setTimeout(() => {
-                    copyBtn.classList.remove('copied');
-                    copyBtn.textContent = '複製全部';
-                    if (feedback) feedback.textContent = '';
-                }, 2500);
-            });
-        });
-    }
+    if (copyBtn) copyBtn.addEventListener('click', downloadDataJs);
 });
