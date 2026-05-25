@@ -640,6 +640,21 @@ function hideWeightModal() {
     document.getElementById('weightModal').style.display = 'none';
 }
 
+// 切換自然機率模式（重轉率全為 0）
+function toggleNaturalProbability(enabled) {
+    if (enabled) {
+        // 設定所有重轉率為 0
+        data.baseredraw = new Array(originalBaseredraw.length).fill(0);
+        data.freeredraw = new Array(originalFreeredraw.length).fill(0);
+        console.log('✅ 自然機率模式：重轉率全部設為 0');
+    } else {
+        // 恢復原始重轉率
+        data.baseredraw = [...originalBaseredraw];
+        data.freeredraw = [...originalFreeredraw];
+        console.log('✅ 恢復預設重轉率');
+    }
+}
+
 // 綁定事件
 document.addEventListener('DOMContentLoaded', function() {
     // 備份原始值
@@ -672,4 +687,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const yAxisInput = document.getElementById('yAxisMaxInput');
     if (yAxisInput) yAxisInput.addEventListener('change', updateYAxisScale);
+
+    // 自然機率開關
+    const naturalToggle = document.getElementById('naturalProbToggle');
+    if (naturalToggle) {
+        naturalToggle.addEventListener('change', function() {
+            toggleNaturalProbability(this.checked);
+        });
+    }
 });

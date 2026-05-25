@@ -616,6 +616,56 @@ body.free-game-mode .stat-value {
     box-shadow: 0 3px 6px rgba(0,0,0,0.3);
 }
 
+/* 自然機率開關 */
+.toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    margin-left: 15px;
+    padding-left: 15px;
+    border-left: 1px solid rgba(255,255,255,0.2);
+}
+
+.toggle-label input[type="checkbox"] {
+    display: none;
+}
+
+.toggle-slider {
+    width: 40px;
+    height: 22px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 11px;
+    position: relative;
+    transition: background 0.3s;
+}
+
+.toggle-slider::after {
+    content: '';
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    background: white;
+    border-radius: 50%;
+    top: 2px;
+    left: 2px;
+    transition: transform 0.3s;
+}
+
+.toggle-label input:checked + .toggle-slider {
+    background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
+}
+
+.toggle-label input:checked + .toggle-slider::after {
+    transform: translateX(18px);
+}
+
+.toggle-text {
+    font-size: 0.85em;
+    color: #dfe6e9;
+    white-space: nowrap;
+}
+
 #editModeText {
     color: #81ecec;
     font-style: italic;
